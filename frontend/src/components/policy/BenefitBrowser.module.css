@@ -1,0 +1,21 @@
+.layout { display: grid; grid-template-columns: 250px minmax(0, 1fr); gap: 20px; align-items: start; }
+.filter { position: sticky; top: 88px; display: flex; flex-direction: column; gap: 10px; }
+.filter fieldset { border: 0; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.filter legend { font-size: 15px; font-weight: 800; margin-bottom: 4px; padding: 0; }
+.check { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--sub); cursor: pointer; padding: 3px 0; }
+.check input { width: 16px; height: 16px; accent-color: var(--brand); }
+.card { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 20px; align-items: center; background: #fff; border: 1px solid var(--line); border-radius: 20px; padding: 18px; box-shadow: var(--shadow); }
+.card h3 { font-size: 18px; }
+.detail { display: flex; flex-direction: column; gap: 4px; margin-top: 6px; padding: 12px 14px; border-radius: 12px; background: #f6f8fb; }
+.detail b { display: inline-block; width: 36px; color: var(--ink); }
+.thumb { flex: none; display: grid; place-items: center; border-radius: 16px; background: linear-gradient(135deg, #9cc8ff, #4f86e8); }
+
+@media (max-width: 900px) {
+  .layout { grid-template-columns: 1fr; }
+  .filter { position: static; }
+}
+@media (max-width: 720px) {
+  .card { grid-template-columns: 1fr; gap: 12px; }
+  .card .thumb { display: none; }
+  .card :global(.btn-sm) { justify-self: start; }
+}
