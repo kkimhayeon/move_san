@@ -1,10 +1,11 @@
-// POST {API_BASE}/api/compare — 계산 API (아직 팀 규격 미정, 없으면 프론트 계산식 사용)
-// 결과 화면은 지금 compareDetailed를 직접 쓴다. 이 함수로 바꾸면 계산 결과가 달라질 수 있다.
+// POST {API_BASE}/api/compare
+// 성공하면 서버 JSON을 그대로 반환한다. 서버가 없거나 실패하면 compareDetailed와 같은 모양으로 계산한다.
+// 결과 화면은 새로고침 없이 바로 그리려고 이 함수 대신 compareDetailed를 직접 호출한다.
 import { API_BASE } from './client';
-import { compare } from '@/utils/calc';
+import { compareDetailed } from '@/utils/calc';
 
 export async function fetchCompare(input) {
-  if (!API_BASE) return compare(input);
+  if (!API_BASE) return compareDetailed(input);
   try {
     const res = await fetch(`${API_BASE}/api/compare`, {
       method: 'POST',
@@ -14,6 +15,6 @@ export async function fetchCompare(input) {
     if (!res.ok) throw new Error(String(res.status));
     return await res.json();
   } catch {
-    return compare(input);
+    return compareDetailed(input);
   }
 }

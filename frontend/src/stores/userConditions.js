@@ -17,7 +17,7 @@ export const EMPTY_CONDITIONS = {
   busanMonthlySalary: null, // 부산 세후 월급 (계산기 busanPay)
   seoulMonthlyRent: null, // 서울 월세 (계산기 seoulRent)
   busanMonthlyRent: null, // 부산 월세 (계산기 busanRent)
-  seoulMonthlyLiving: null, // 서울 생활비 (계산기 living)
+  seoulMonthlyLiving: null, // 서울 생활비 (계산기 seoulLiving)
   housingType: null, // 'monthlyRent' | 'jeonse' | 'withFamily' | 'own' | 'other'
   incomeBand: null, // 'under2000' | '2000to4000' | 'over4000' (연소득, 만원)
   busanWorkDistrict: null, // 부산 근무 예정 구·군 (예: '해운대구')
@@ -52,8 +52,7 @@ const FROM_CALCULATOR = {
   busanMonthlySalary: 'busanPay',
   seoulMonthlyRent: 'seoulRent',
   busanMonthlyRent: 'busanRent',
-  seoulMonthlyLiving: 'living',
-  age: 'age',
+  seoulMonthlyLiving: 'seoulLiving',
 };
 
 const KEY = 'movesan-user-conditions';

@@ -7,3 +7,12 @@ export const signed = (n) => {
   const r = round1(n);
   return (r > 0 ? '+' : r < 0 ? '−' : '') + Math.abs(r).toLocaleString('ko-KR');
 };
+
+// 1년 합계처럼 만원 단위 정수로 보여줄 때
+export const fmtInt = (n) => Math.round(n).toLocaleString('ko-KR');
+
+export const signedInt = (n) => {
+  const rounded = Math.round(n);
+  const sign = rounded > 0 ? '+' : rounded < 0 ? '−' : '';
+  return sign + Math.abs(rounded).toLocaleString('ko-KR');
+};

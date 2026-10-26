@@ -5,7 +5,7 @@
 import { GU, SPOTS } from '@/constants/busan';
 import { BENEFITS } from '@/constants/benefits';
 import { ROUTES } from '@/constants/routes';
-import { compareDetailed, LIVING_ITEMS, 물가비율 } from '@/utils/calc';
+import { compareDetailed, LIVING_ITEMS, 물가비율, 부산물가지수, 부산물가절감률 } from '@/utils/calc';
 import { fmt } from '@/utils/formatMoney';
 
 const median = (arr) => {
@@ -49,7 +49,7 @@ function conditionsCompare(c) {
 // 추천 질문 4개에 대한 예시 답변 (내 조건이 있으면 금액으로 계산)
 function suggestedReply(q, c) {
   const t = q.replace(/\s/g, '');
-  const pct = Math.round((1 - 물가비율) * 1000) / 10;
+  const pct = 부산물가절감률;
 
   if (/(이직|취업|경제적|장점)/.test(t)) {
     const r = conditionsCompare(c);
@@ -57,7 +57,7 @@ function suggestedReply(q, c) {
       const gain = r.diff >= 0;
       return {
         text: `내 조건으로 계산하면\n· 서울: 한 달 ${fmt(r.seoulLeft)}만원 남음\n· 부산: 한 달 ${fmt(r.busanLeft)}만원 남음\n` +
-          `부산이 한 달 **${fmt(Math.abs(r.diff))}만원 ${gain ? '더' : '덜'}** 남고, 1년이면 약 ${won(Math.abs(r.diff) * 12)}만원이에요.\n교통비 등은 빠져 있으니 계산기에서 한 번 더 확인해 주세요.`,
+          `부산이 한 달 **${fmt(Math.abs(r.diff))}만원 ${gain ? '더' : '덜'}** 남고, 1년이면 약 ${won(Math.abs(r.diff) * 12)}만원이에요.\n부산 생활비는 서울 생활비에 물가 비율을 적용했어요.`,
         links: [{ href: ROUTES.home, label: '계산기에서 확인' }],
       };
     }
@@ -107,12 +107,9 @@ export function localReply(question, { values, complete, conditions }) {
 
   if (/(얼마.*남|남는|모을|모으|내 ?조건|계산|잔여)/.test(q)) {
     if (!complete) {
-      return { text: '내 조건으로 계산하려면 먼저 **생활비 계산기**에 서울·부산 월급과 월세, 생활비를 넣어 주세요. 다 넣으면 여기서도 바로 알려드릴게요.', links: [{ href: ROUTES.home, label: '계산기 열기' }] };
+      return { text: '내 조건으로 계산하려면 먼저 **생활비 계산기**에 서울·부산 월급과 월세, 서울 생활비를 넣어 주세요. 부산 생활비는 물가 비율로 계산해요.', links: [{ href: ROUTES.home, label: '계산기 열기' }] };
     }
-    const r = compareDetailed({
-      seoulPay: values.seoulPay, seoulRent: values.seoulRent, seoulLiving: values.living, seoulTransport: values.seoulTransport,
-      busanPay: values.busanPay, busanRent: values.busanRent, busanLiving: values.busanLiving, busanTransport: values.busanTransport,
-    });
+    const r = compareDetailed(values);
     const gain = r.yearlyDiff >= 0;
     return {
       text: `입력하신 조건이면 부산으로 옮겼을 때 **1년에 ${won(Math.abs(r.yearlyDiff))}만원 ${gain ? '더 남아요' : '덜 남아요'}**.\n` +
@@ -147,7 +144,7 @@ export function localReply(question, { values, complete, conditions }) {
   if (/(생활비|물가|장보|외식|식비)/.test(q)) {
     const lines = LIVING_ITEMS.filter((it) => it.ratio < 1).map((it) => `· ${it.label}: ${Math.round((1 - it.ratio) * 100)}% 저렴 (${it.example})`).join('\n');
     return {
-      text: `부산 생활비는 서울보다 약 **${Math.round((1 - 물가비율) * 1000) / 10}% 저렴**해요 (서울 = 100일 때 부산 ${Math.round(물가비율 * 1000) / 10}).\n${lines}\n· 그 외 교통·통신·의류 등은 같은 가격으로 계산했어요.\n기준: 통계청 가계동향(39세 이하 근로자가구) 지출 비중 × 행안부 지방물가`,
+      text: `부산 생활비는 서울보다 약 **${부산물가절감률}% 저렴**해요 (서울 = 100일 때 부산 ${부산물가지수}).\n${lines}\n· 그 외 교통·통신·의류 등은 같은 가격으로 계산했어요.\n기준: 통계청 가계동향(39세 이하 근로자가구) 지출 비중 × 행안부 지방물가`,
       links: [{ href: ROUTES.home, label: '내 생활비로 계산하기' }],
     };
   }
@@ -158,7 +155,7 @@ export function localReply(question, { values, complete, conditions }) {
   }
 
   if (/(교통|지하철|버스|출퇴근)/.test(q)) {
-    return { text: '부산 지하철은 교통카드 기준 1,600원이에요. 출퇴근 왕복 월 22일이면 약 7만원이에요.\n교통비는 사람마다 달라서 계산기에 직접 넣도록 했어요.', links: [{ href: ROUTES.home, label: '계산기에 교통비 넣기' }] };
+    return { text: '부산 지하철은 교통카드 기준 1,600원이에요. 출퇴근 왕복 월 22일이면 약 7만원이에요.\n계산기는 월급·월세·생활비로 한 달에 남는 돈을 구해요.', links: [{ href: ROUTES.home, label: '생활비 계산기 열기' }] };
   }
 
   return {

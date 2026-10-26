@@ -49,6 +49,23 @@
 .products { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; }
 .product { display: flex; flex-direction: column; gap: 10px; background: #fff; border: 1px solid var(--line); border-radius: 20px; padding: 20px; box-shadow: var(--shadow); }
 .product h3 { font-size: 17px; }
+.emptyCard { position: relative; max-width: 560px; margin: -84px auto 0; text-align: center; }
+.emptyAction { align-self: center; }
+.summaryCard { display: flex; flex-direction: column; gap: 6px; }
+.tagStart { align-self: flex-start; }
+.spaced { margin-top: 8px; }
+.flush { margin: 0; }
+.tableNote { margin: 12px 0 0; }
+.chartTitle { font-size: 16px; }
+.convertLead { font-weight: 700; }
+.convertAmount { font-size: 18px; }
+.convertChips { margin-left: auto; }
+.moreLink { font-weight: 700; color: var(--brand); }
+.disclaimer { margin: 10px 0 0; }
+.productInfo { font-weight: 600; }
+.productAction { margin-top: auto; }
+.bigNum.loss { color: var(--bad); }
+.vsBusan { color: var(--brand); }
 
 @media (max-width: 900px) {
   .grid, .sumGrid { grid-template-columns: 1fr; }

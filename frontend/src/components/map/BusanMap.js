@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { fetchRent } from '@/api/rent';
 import { GU, MAP_HEIGHT, SPOTS, SPOT_TYPES } from '@/constants/busan';
 import { ROUTES } from '@/constants/routes';
-import { useApp, useNumbers } from '@/stores/comparison';
+import { useComparisonInputs, useNumbers } from '@/stores/comparison';
 import { fmt, signed } from '@/utils/formatMoney';
 import styles from './BusanMap.module.css';
 
@@ -29,7 +29,7 @@ const median = (arr) => {
 
 export default function BusanMap() {
   const router = useRouter();
-  const { setField } = useApp();
+  const { setField } = useComparisonInputs();
   const { values, missing } = useNumbers();
   const [base, setBase] = useState(() => Object.fromEntries(GU.map((g) => [g.name, { rent: g.rent, count: g.count }])));
   const [room, setRoom] = useState('one');

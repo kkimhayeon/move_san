@@ -1,71 +1,30 @@
 .head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 20px; }
 .head h2 { font-size: 22px; }
-.cols { display: grid; grid-template-columns: 1fr auto 1fr; gap: 20px; align-items: stretch; }
-.col { border-radius: 18px; padding: 20px; background: #f8fafc; border: 1px solid var(--line); }
+.cols { display: grid; grid-template-columns: 1fr auto 1fr; gap: 20px; align-items: stretch; width: 100%; min-width: 0; }
+.col { min-width: 0; box-sizing: border-box; border-radius: 18px; padding: 20px; background: #f8fafc; border: 1px solid var(--line); }
 .busan { background: #f2f7ff; border-color: var(--brand-line); }
 .col h3 { font-size: 18px; display: flex; align-items: center; gap: 8px; }
 .col h3 small { font-size: 13px; font-weight: 600; color: var(--sub); }
 .dot { width: 10px; height: 10px; border-radius: 50%; background: #94a3b8; }
 .busan .dot { background: var(--brand); }
 .arrow { align-self: center; width: 44px; height: 44px; border-radius: 50%; background: #fff; border: 1px solid var(--brand-line); display: grid; place-items: center; color: var(--brand); box-shadow: var(--shadow); }
-.field { display: flex; flex-direction: column; gap: 6px; margin-top: 14px; }
+.field { display: flex; flex-direction: column; gap: 6px; margin-top: 14px; width: 100%; min-width: 0; }
 .label { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 700; }
-.opt { font-size: 12px; font-weight: 600; color: #8a97aa; }
 .icon { width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center; background: #fff; border: 1px solid var(--line); color: var(--sub); }
 .busan .icon { color: var(--brand); border-color: var(--brand-line); }
-.money { position: relative; display: flex; align-items: center; }
-.money input { width: 100%; min-height: 50px; padding: 0 56px 0 16px; border-radius: 12px; border: 1px solid #d5dde8; background: #fff; font-size: 17px; font-weight: 700; color: var(--ink); font-family: inherit; }
+.money { position: relative; display: flex; align-items: center; width: 100%; min-width: 0; }
+.money input { width: 100%; min-width: 0; max-width: 100%; box-sizing: border-box; min-height: 50px; padding: 0 56px 0 16px; border-radius: 12px; border: 1px solid #d5dde8; background: #fff; font-size: 17px; font-weight: 700; color: var(--ink); font-family: inherit; }
 .money input::placeholder { color: #a8b4c5; font-weight: 500; }
 .money input:focus { outline: none; border-color: var(--brand); box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15); }
 .money input.err { border-color: var(--bad); }
 .money span { position: absolute; right: 16px; font-size: 14px; font-weight: 600; color: var(--sub); }
 .hint { font-size: 12px; color: #7d8ba0; }
 .hint b { color: var(--brand); }
+.mapLink { color: var(--brand); font-weight: 700; }
 .foot { display: flex; flex-direction: column; align-items: center; gap: 10px; margin-top: 26px; }
 
 @media (max-width: 900px) {
-  .cols { grid-template-columns: 1fr; }
-  .arrow { transform: rotate(90deg); }
-}
-
-/* 계산기 레이아웃 안정화 — 전용 CSS */
-
-.cols {
-  width: 100%;
-  min-width: 0;
-}
-
-.col {
-  min-width: 0;
-  box-sizing: border-box;
-}
-
-.field {
-  width: 100%;
-  min-width: 0;
-}
-
-.money {
-  width: 100%;
-  min-width: 0;
-}
-
-.money input {
-  box-sizing: border-box;
-  min-width: 0;
-  max-width: 100%;
-}
-
-@media (max-width: 900px) {
-  .cols {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .col {
-    width: 100%;
-  }
-
-  .arrow {
-    justify-self: center;
-  }
+  .cols { grid-template-columns: minmax(0, 1fr); }
+  .col { width: 100%; }
+  .arrow { transform: rotate(90deg); justify-self: center; }
 }

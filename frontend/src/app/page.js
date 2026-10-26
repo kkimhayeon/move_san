@@ -25,7 +25,7 @@ export default function Home() {
       <Hero
         eyebrow="MOVESAN"
         title={<>같은 월급, 부산에서는<br /><em>얼마나 더 남을까?</em></>}
-        subtitle="서울과 부산의 월급·월세·생활비를 넣으면 1년에 얼마나 더 모을 수 있는지 알려드려요."
+        subtitle="월급·월세와 서울 생활비를 넣으면, 부산 생활비는 물가 비율로 계산해 1년에 얼마나 더 모을 수 있는지 알려드려요."
       />
       <div className="page">
         <ComparisonForm />

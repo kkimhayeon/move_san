@@ -9,7 +9,7 @@ import Link from 'next/link';
 import { API_BASE } from '@/api/client';
 import { sendChat } from '@/api/chat';
 import { ROUTES } from '@/constants/routes';
-import { useApp, useNumbers } from '@/stores/comparison';
+import { useComparisonInputs, useNumbers } from '@/stores/comparison';
 import { hasAnyCondition, useUserConditions } from '@/stores/userConditions';
 import { localReply, SUGGESTIONS } from '@/utils/chatbot';
 import UserConditionsForm from '@/components/chatbot/UserConditionsForm';
@@ -31,7 +31,7 @@ const SendIcon = () => (
 );
 
 export default function AiChat() {
-  const { inputs } = useApp();
+  const { inputs } = useComparisonInputs();
   const { values, complete } = useNumbers();
   const conditions = useUserConditions();
   const [open, setOpen] = useState(false);
