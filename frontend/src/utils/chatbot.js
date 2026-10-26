@@ -1,6 +1,7 @@
 // 무브산 AI 도우미 — 답변 만들기
 // 1) .env.local에 NEXT_PUBLIC_API_URL이 있으면 Flask POST /api/chat 으로 실제 AI 답변을 받는다 (api/chat.js sendChat)
-// 2) 없거나 실패하면 아래 규칙 기반 답변(사이트 데이터 사용)으로 대신 답한다
+// 2) API 주소가 없으면 아래 규칙 기반 '예시(Mock) 답변'으로 대신 답한다 — 화면에 '예시 답변 · AI 연결 전'으로 표시
+//    (실제 AI 답변처럼 보이지 않게 AiChat.js에서 isMock 표시를 붙인다)
 import { GU, SPOTS } from '@/constants/busan';
 import { BENEFITS } from '@/constants/benefits';
 import { ROUTES } from '@/constants/routes';
@@ -28,17 +29,77 @@ function findGu(q) {
   return null;
 }
 
+// 추천 질문 (FE 과제 4번 챗봇 기준 4개)
 export const SUGGESTIONS = [
-  '해운대구 원룸 월세는 얼마야?',
-  '부산 생활비는 서울보다 얼마나 싸?',
-  '내 조건이면 1년에 얼마 남아?',
-  '월세 싼 동네 알려줘',
+  '서울에서 부산으로 이사하면 생활비가 얼마나 줄어들까?',
+  '부산에서 받을 수 있는 청년 지원금은?',
+  '부산에서 월세가 저렴한 지역은?',
+  '부산으로 이직하면 어떤 경제적 장점이 있을까?',
 ];
 
-// values: 계산기 입력값(숫자), complete: 필수값을 다 넣었는지
-export function localReply(question, { values, complete }) {
+// 내 조건(stores/userConditions.js의 useUserConditions 값)으로 '한 달에 남는 돈' 비교
+function conditionsCompare(c) {
+  const need = [c.seoulMonthlySalary, c.busanMonthlySalary, c.seoulMonthlyRent, c.busanMonthlyRent, c.seoulMonthlyLiving];
+  if (!c || need.some((v) => v === null || v === undefined)) return null;
+  const seoulLeft = c.seoulMonthlySalary - c.seoulMonthlyRent - c.seoulMonthlyLiving;
+  const busanLeft = c.busanMonthlySalary - c.busanMonthlyRent - c.seoulMonthlyLiving * 물가비율;
+  return { seoulLeft, busanLeft, diff: busanLeft - seoulLeft };
+}
+
+// 추천 질문 4개에 대한 예시 답변 (내 조건이 있으면 금액으로 계산)
+function suggestedReply(q, c) {
+  const t = q.replace(/\s/g, '');
+  const pct = Math.round((1 - 물가비율) * 1000) / 10;
+
+  if (/(이직|취업|경제적|장점)/.test(t)) {
+    const r = conditionsCompare(c);
+    if (r) {
+      const gain = r.diff >= 0;
+      return {
+        text: `내 조건으로 계산하면\n· 서울: 한 달 ${fmt(r.seoulLeft)}만원 남음\n· 부산: 한 달 ${fmt(r.busanLeft)}만원 남음\n` +
+          `부산이 한 달 **${fmt(Math.abs(r.diff))}만원 ${gain ? '더' : '덜'}** 남고, 1년이면 약 ${won(Math.abs(r.diff) * 12)}만원이에요.\n교통비 등은 빠져 있으니 계산기에서 한 번 더 확인해 주세요.`,
+        links: [{ href: ROUTES.home, label: '계산기에서 확인' }],
+      };
+    }
+    return {
+      text: `부산으로 옮기면 보통 이런 부분에서 차이가 생겨요.\n· 월세(주거비) — 가장 큰 차이\n· 생활물가 — 서울보다 약 ${pct}% 낮음\n· 부산 청년 지원 정책\n'내 조건' 탭에 월급·월세·생활비를 넣으면 한 달에 얼마 더 남는지 계산해 드릴게요.`,
+      showConditions: true,
+    };
+  }
+
+  if (/(생활비|물가)/.test(t) && /(줄어|얼마나|이사)/.test(t)) {
+    const lines = [`생활비 계산기 기준으로 부산의 생활물가는 서울보다 **약 ${pct}% 낮아요** (주거비 제외).`];
+    if (c?.seoulMonthlyLiving != null) {
+      const busan = c.seoulMonthlyLiving * 물가비율;
+      lines.push(`서울 생활비 ${fmt(c.seoulMonthlyLiving)}만원 기준이면 부산에서는 약 **${fmt(busan)}만원**, 한 달에 약 ${fmt(c.seoulMonthlyLiving - busan)}만원 줄어요.`);
+    } else {
+      lines.push(`'내 조건' 탭에 서울 생활비를 넣으면 금액으로 계산해 드릴게요.`);
+    }
+    if (c?.seoulMonthlyRent != null && c?.busanMonthlyRent != null) {
+      const d = c.seoulMonthlyRent - c.busanMonthlyRent;
+      lines.push(`월세는 ${fmt(Math.abs(d))}만원 ${d >= 0 ? '줄어들어요' : '늘어나요'}.`);
+    }
+    return { text: lines.join('\n'), links: [{ href: ROUTES.home, label: '내 생활비로 계산하기' }] };
+  }
+
+  if (/(지원금|혜택|정책)/.test(t) && /청년/.test(t)) {
+    const cats = [...new Set(BENEFITS.map((b) => b.cat))].join(', ');
+    const lines = [`부산 청년 혜택은 **${cats}** 분야로 모아 두었어요.`];
+    if (c?.age != null) lines.push(`정책마다 나이 기준이 달라서, 만 ${c.age}세가 대상인지는 각 공고에서 확인이 필요해요.`);
+    lines.push('※ 금액과 조건은 아직 정리 중이라 각 기관 공고를 꼭 확인해 주세요.');
+    return { text: lines.join('\n'), links: [{ href: ROUTES.benefits, label: '청년 혜택 보기' }] };
+  }
+
+  return null; // 월세 저렴한 지역 등은 아래 기존 규칙으로 답함
+}
+
+// values: 계산기 입력값(숫자), complete: 필수값을 다 넣었는지, conditions: 내 조건(useUserConditions)
+export function localReply(question, { values, complete, conditions }) {
   const q = question.trim();
   const all = median(GU.map((g) => g.rent));
+
+  const suggested = suggestedReply(q, conditions);
+  if (suggested) return suggested;
 
   if (/^(안녕|하이|hi|hello)/i.test(q)) {
     return { text: '안녕하세요! 무브산 AI 도우미예요 😀\n부산 동네 월세, 생활비 차이, 내 조건으로 1년에 얼마 남는지 물어보세요.' };
