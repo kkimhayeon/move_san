@@ -1,11 +1,12 @@
 import Hero from '@/components/common/Hero';
 import BenefitBrowser from '@/components/policy/BenefitBrowser';
+import BenefitsComparison from '@/components/policy/BenefitsComparison';
 import { ROUTES } from '@/constants/routes';
 import { pageMeta } from '@/utils/seo';
 
 export const metadata = pageMeta({
   title: '청년 혜택',
-  description: '주거, 금융, 교통, 교육, 취업 등 부산시와 기관의 청년 지원사업과 지역 금융상품을 한곳에서 볼 수 있습니다.',
+  description: '서울과 부산의 청년 정책을 비교하고, 부산시와 기관의 지원사업·지역 금융상품을 한곳에서 볼 수 있습니다.',
   path: ROUTES.benefits,
 });
 
@@ -19,7 +20,8 @@ export default function BenefitsPage() {
         subtitle="주거, 금융, 교통, 교육, 취업 등 부산시와 기관의 청년 지원사업을 확인해 보세요."
       />
       <div className="page">
-        <div className="lift">
+        <div className="lift stack" style={{ gap: 36 }}>
+          <BenefitsComparison />
           <BenefitBrowser />
         </div>
       </div>

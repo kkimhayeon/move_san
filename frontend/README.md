@@ -113,5 +113,6 @@ NEXT_PUBLIC_API_URL=http://localhost:5000
 
 - `src/constants/busan.js`의 `rent`, `count` → 주거 담당의 구·군별 원룸 월세 중앙값 (housing_area_mart)
 - `src/constants/benefits.js` (청년 혜택 목록 + 결과 화면 금융상품 카드 `featured`) → 혜택 담당의 정책·금융상품 데이터
+- `src/constants/benefitsMock.js` (서울·부산 정책 비교용 가상 정책) → 자격 확인 전에는 합산에 넣지 않음. 실제 정책 데이터로 교체
 - `src/components/map/BusanMap.js`의 `TWO_ROOM` (투룸 = 원룸 × 1.5 예시) → 주거 담당의 투룸 중앙값
 - `src/components/community/CommunityBoard.js`의 예시 글 → 게시판 기능 (P2, 지금은 글쓰기가 화면에만 저장됨)
