@@ -27,3 +27,45 @@
   .cols { grid-template-columns: 1fr; }
   .arrow { transform: rotate(90deg); }
 }
+
+/* 계산기 레이아웃 안정화 — 전용 CSS */
+
+.cols {
+  width: 100%;
+  min-width: 0;
+}
+
+.col {
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.field {
+  width: 100%;
+  min-width: 0;
+}
+
+.money {
+  width: 100%;
+  min-width: 0;
+}
+
+.money input {
+  box-sizing: border-box;
+  min-width: 0;
+  max-width: 100%;
+}
+
+@media (max-width: 900px) {
+  .cols {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .col {
+    width: 100%;
+  }
+
+  .arrow {
+    justify-self: center;
+  }
+}
