@@ -1,9 +1,9 @@
 // 챗봇 · 사용자 조건 테스트 페이지 (localhost:3000/chatbot)
 // layout.tsx에 챗봇이 통합되기 전까지 여기서 확인해요.
 
-import ChatbotWidget from "@/components/chatbot/ChatbotWidget";
-import UserConditionsForm from "@/components/chatbot/UserConditionsForm";
-import UserConditionsPreview from "@/components/chatbot/UserConditionsPreview";
+import ChatbotWidget from "@/components/chatbot/widget/ChatbotWidget";
+import UserConditionsForm from "@/components/chatbot/widget/UserConditionsForm";
+import UserConditionsPreview from "@/components/chatbot/widget/UserConditionsPreview";
 
 export default function ChatbotTestPage() {
   return (

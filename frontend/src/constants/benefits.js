@@ -4,12 +4,6 @@
 
 export const CATEGORIES = ['주거 지원', '금융 지원', '생활 지원', '취업·창업', '교통 지원', '교육·문화'];
 
-export const FILTERS = {
-  ages: { label: '연령대', options: ['19세 이하', '20대', '30대'] },
-  income: { label: '소득 구간', options: ['2천만원 이하', '2~4천만원', '4천만원 이상'] },
-  housing: { label: '거주 형태', options: ['무주택', '월세', '자가·기타'] },
-};
-
 const ALL_AGES = ['19세 이하', '20대', '30대'];
 const ADULT = ['20대', '30대'];
 const ALL_INCOME = ['2천만원 이하', '2~4천만원', '4천만원 이상'];

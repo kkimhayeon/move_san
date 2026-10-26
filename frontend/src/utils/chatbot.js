@@ -154,7 +154,7 @@ export function localReply(question, { values, complete, conditions }) {
 
   if (/(혜택|정책|지원|적금|대출|금융|청년)/.test(q)) {
     const cats = [...new Set(BENEFITS.map((b) => b.cat))].join(', ');
-    return { text: `부산 청년 혜택은 **${cats}** 분야로 모아 두었어요. 나이·소득·거주 형태로 걸러서 볼 수 있어요.\n※ 금액과 조건은 아직 정리 중이라 각 기관 공고를 꼭 확인해 주세요.`, links: [{ href: ROUTES.benefits, label: '청년 혜택 보기' }] };
+    return { text: `부산 청년 혜택은 **${cats}** 분야로 모아 두었어요. 정책 이름이나 요약에 들어 있는 말로 찾아볼 수 있어요.\n※ 조건은 아직 정리 중이라 각 기관 공고를 꼭 확인해 주세요.`, links: [{ href: ROUTES.benefits, label: '청년 혜택 보기' }] };
   }
 
   if (/(교통|지하철|버스|출퇴근)/.test(q)) {
