@@ -1,0 +1,4 @@
+.features { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; }
+.feature { display: flex; gap: 14px; align-items: flex-start; background: #fff; border: 1px solid var(--line); border-radius: 18px; padding: 18px; }
+.feature:hover { border-color: var(--brand-line); }
+.icon { flex: none; width: 42px; height: 42px; border-radius: 12px; background: var(--brand-soft); color: var(--brand); display: grid; place-items: center; }
