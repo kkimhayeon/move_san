@@ -1,0 +1,16 @@
+.meta { display: flex; gap: 10px; font-size: 12px; color: #8a97aa; }
+.searchRow { display: flex; gap: 12px; }
+.searchBox { flex: 1; display: flex; align-items: center; gap: 10px; min-height: 52px; padding: 0 18px; border-radius: 14px; background: #fff; border: 1px solid var(--line); box-shadow: var(--shadow); color: var(--sub); }
+.searchBox input { flex: 1; border: 0; outline: none; font: inherit; font-size: 15px; background: transparent; color: var(--ink); }
+.textInput { width: 100%; padding: 12px 14px; border-radius: 12px; border: 1px solid #d5dde8; font: inherit; resize: vertical; }
+.textInput:focus { outline: none; border-color: var(--brand); }
+.card { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 20px; align-items: center; background: #fff; border: 1px solid var(--line); border-radius: 20px; padding: 16px 20px 16px 16px; box-shadow: var(--shadow); }
+.card h3 { font-size: 18px; }
+.thumb { flex: none; display: grid; place-items: center; border-radius: 16px; background: linear-gradient(135deg, #9cc8ff, #4f86e8); }
+
+@media (max-width: 720px) {
+  .searchRow :global(.btn) { padding: 0 16px !important; white-space: nowrap; }
+  .card { grid-template-columns: 1fr; gap: 12px; }
+  .card .thumb { display: none; }
+  .card :global(.tag) { justify-self: start; }
+}
