@@ -15,12 +15,12 @@ export function FieldIcon({ name, size = 16 }) {
 }
 
 export const SEOUL_FIELDS = [
-  { key: 'seoulPay', icon: 'pay', label: '세후 월급', placeholder: '예) 380' },
+  { key: 'seoulPay', icon: 'pay', label: '월급', placeholder: '예) 380' },
   { key: 'seoulRent', icon: 'rent', label: '월세 (주거비)', placeholder: '예) 90' },
   { key: 'seoulLiving', icon: 'living', label: '생활비 (식비, 통신비 등)', placeholder: '예) 120', hint: 'livingRatio' },
 ];
 
 export const BUSAN_FIELDS = [
-  { key: 'busanPay', icon: 'pay', label: '세후 월급', placeholder: '예) 420', mirror: 'seoulPay' },
+  { key: 'busanPay', icon: 'pay', label: '월급', placeholder: '예) 420', mirror: 'seoulPay' },
   { key: 'busanRent', icon: 'rent', label: '월세 (주거비)', placeholder: '예) 55', hint: 'map' },
 ];

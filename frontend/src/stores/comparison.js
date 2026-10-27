@@ -1,7 +1,7 @@
 'use client';
 
-// 계산기, 결과, 동네 지도가 공유하는 입력값.
-// 새로고침해도 남도록 sessionStorage에만 두고, 서버로는 보내지 않는다.
+// 계산기, 결과, 동네 지도가 공유하는 입력값·API 결과.
+// 입력값만 sessionStorage에 두고, API result는 새로고침 시 사라진다 (결과 페이지는 재계산 안내).
 import { useEffect } from 'react';
 import { create } from 'zustand';
 import { useShallow } from 'zustand/react/shallow';
@@ -59,10 +59,16 @@ function readSavedInputs() {
 
 export const useComparisonStore = create((set) => ({
   inputs: { ...EMPTY },
+  result: null,
   loaded: false,
-  setField: (key, value) => set((state) => ({ inputs: { ...state.inputs, [key]: value } })),
-  setInputs: (inputs) => set({ inputs }),
-  reset: () => set({ inputs: { ...EMPTY } }),
+  setField: (key, value) => set((state) => ({
+    inputs: { ...state.inputs, [key]: value },
+    result: null,
+  })),
+  setInputs: (inputs) => set({ inputs, result: null }),
+  setResult: (result) => set({ result }),
+  clearResult: () => set({ result: null }),
+  reset: () => set({ inputs: { ...EMPTY }, result: null }),
   hydrate: () => set({ inputs: readSavedInputs(), loaded: true }),
 }));
 
@@ -84,8 +90,14 @@ export function useComparisonInputs() {
     inputs: state.inputs,
     setField: state.setField,
     setInputs: state.setInputs,
+    setResult: state.setResult,
+    clearResult: state.clearResult,
     reset: state.reset,
   })));
+}
+
+export function useComparisonResult() {
+  return useComparisonStore((state) => state.result);
 }
 
 export function useNumbers() {

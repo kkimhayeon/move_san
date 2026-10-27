@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/client';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
+// Flask 서버 주소. 경로에 /api/v1을 붙이지 않는다 (요청 함수에서 붙인다).
+export const API_BASE = process.env.NEXT_PUBLIC_API_URL;
 
 export async function apiFetch(path, options = {}) {
   const supabase = createClient();
@@ -27,7 +28,7 @@ export async function apiFetch(path, options = {}) {
     headers.set('Content-Type', 'application/json');
   }
 
-  const response = await fetch(`${API_URL}${path}`, {
+  const response = await fetch(`${API_BASE}${path}`, {
     ...options,
     headers,
   });

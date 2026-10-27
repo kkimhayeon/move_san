@@ -5,7 +5,7 @@ import Link from 'next/link';
 import Hero from '@/components/common/Hero';
 import { BENEFITS } from '@/constants/benefits';
 import { ROUTES } from '@/constants/routes';
-import { missingPrompt, useNumbers } from '@/stores/comparison';
+import { useComparisonResult } from '@/stores/comparison';
 import { fmt, fmtInt, signedInt } from '@/utils/formatMoney';
 import ComparisonChart from './ComparisonChart';
 import ComparisonTable from './ComparisonTable';
@@ -14,14 +14,14 @@ import { buildComparisonView } from './viewModel';
 import hero from '@/components/common/Hero.module.css';
 import styles from './ComparisonResult.module.css';
 
-function IncompleteResult({ missing }) {
+function IncompleteResult() {
   return (
     <>
-      <Hero compact eyebrow="RESULT" title="계산 결과" subtitle="아직 입력하지 않은 항목이 있어요." />
+      <Hero compact eyebrow="RESULT" title="계산 결과" subtitle="아직 계산 결과가 없어요." />
       <div className="page">
         <div className={`card stack ${styles.emptyCard}`}>
-          <h2>{missingPrompt(missing)}</h2>
-          <p className={`muted ${styles.flush}`}>필수 항목을 입력하면 1년 기준 비교 결과를 볼 수 있어요.</p>
+          <h2>먼저 생활비를 계산해 주세요</h2>
+          <p className={`muted ${styles.flush}`}>계산기에서 금액을 입력하고 결과 보기를 누르면 비교 결과를 볼 수 있어요. 새로고침하면 이전 결과는 사라져요.</p>
           <Link href={ROUTES.home} className={`btn ${styles.emptyAction}`}>계산기로 가기 →</Link>
         </div>
       </div>
@@ -30,13 +30,13 @@ function IncompleteResult({ missing }) {
 }
 
 export default function ComparisonResult() {
-  const { values, complete, missing } = useNumbers();
+  const apiResult = useComparisonResult();
   const [chart, setChart] = useState('all');
   const [livingOpen, setLivingOpen] = useState(false);
 
-  if (!complete) return <IncompleteResult missing={missing} />;
+  if (!apiResult) return <IncompleteResult />;
 
-  const view = buildComparisonView(values);
+  const view = buildComparisonView(apiResult);
   const openRow = (row) => {
     if (row.key === 'rent') {
       setChart((current) => (current === 'rent' ? 'all' : 'rent'));

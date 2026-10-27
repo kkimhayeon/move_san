@@ -30,7 +30,7 @@ const median = (arr) => {
 export default function BusanMap() {
   const router = useRouter();
   const { setField } = useComparisonInputs();
-  const { values, missing } = useNumbers();
+  const { values } = useNumbers();
   const [base, setBase] = useState(() => Object.fromEntries(GU.map((g) => [g.name, { rent: g.rent, count: g.count }])));
   const [room, setRoom] = useState('one');
   const [picked, setPicked] = useState('해운대구');
@@ -76,8 +76,8 @@ export default function BusanMap() {
   const pick = (name) => { setPicked(name); setFlip(''); };
   const apply = () => {
     setField('busanRent', String(selRent));
-    const rest = missing.filter((k) => k !== 'busanRent');
-    router.push(rest.length === 0 ? ROUTES.result : ROUTES.home);
+    // 결과는 Flask 계산 후에만 보이므로, 월세 반영 후 계산기로 돌아간다.
+    router.push(ROUTES.home);
   };
 
   return (

@@ -23,6 +23,19 @@
 .mapLink { color: var(--brand); font-weight: 700; }
 .foot { display: flex; flex-direction: column; align-items: center; gap: 10px; margin-top: 26px; }
 
+.col h3 {
+  margin-bottom: 0;
+}
+
+.description {
+  margin: 6px 0 20px;
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.5;
+  color: #64748b;
+  word-break: keep-all;
+}
+
 @media (max-width: 900px) {
   .cols { grid-template-columns: minmax(0, 1fr); }
   .col { width: 100%; }
