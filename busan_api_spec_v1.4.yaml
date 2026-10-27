@@ -1,0 +1,3027 @@
+openapi: 3.0.3
+info:
+  title: 부산살림 API 구현 명세
+  version: 1.4.0-review
+  description: '2026-10-27 경로 버전 관리 반영. 서비스 API는 /api/v1/...로 통일. 문서 버전 1.4.0은 API
+    경로 버전 v1과 별개이다. 기존 클라이언트와 호환되지 않는 계약 변경 시 v2 도입을 검토하며, 내부 리팩터링·호환 가능한 버그 수정은 v1을
+    유지한다. 즐겨찾기는 로그인 토큰으로 사용자를 식별하고 PUT으로 등록, DELETE로 해제한다. 반복 요청도 같은 최종 상태를 유지하며 성공
+    시 200을 반환한다.
+
+
+    2026-10-26 구현 피드백 반영 검토본. v1.2를 대체한다. 인증은 Supabase Auth, Flask는 토큰 검증 및 서비스 권한
+    검사 담당.
+
+    응답은 status(INTEGER), message(STRING), result. HTTP 코드와 status는 일치. 실패 result=null.
+    error.code/x-error-codes는 사용하지 않는다.
+
+    조회/계산/수정/삭제/즐겨찾기 성공 200, 글/댓글/사진 생성 201. 계산 결과 DB 저장 없음.
+
+    금액 단위 만원. 입력은 JSON number, 유한한 0 이상 값, 소수 최대 4자리. multipleOf를 사용하지 않으며 JSON 숫자
+    원문을 Decimal로 파싱하여 소수 자릿수를 검증한다. 숫자 문자열, boolean, null, NaN, Infinity 금지. 뒤쪽 0을
+    제거한 수학적 값 기준으로 판단한다.
+
+    계산은 Decimal로 수행하고 중간 반올림 없음. 표시 금액은 Decimal ROUND_HALF_EVEN으로 소수 1자리. 기존 Python
+    round의 ties-to-even 의도를 유지하되 binary float에 의존하지 않음. 1.25→1.2,1.35→1.4,-1.25→-1.2.
+    -0은 0으로 직렬화. API 숫자는 JSON number.
+
+    지도 median_rent는 소수 최대 4자리의 API 원값, 표시는 소수 1자리. 선택 후 busan_rent에 API 원값 전달. 직접
+    편집한 경우 편집값을 사용.
+
+    지도 월세는 보증금 1000만원 환산(adjusted_1000), 2023-09~2026-08, 전용면적 ≤33㎡, 주택유형 단독/다가구·연립다세대·오피스텔.
+    구군 중심좌표·출처명·갱신시각은 프로젝트에 검증된 값이 없어 null. 지역 코드/컬처/RAG는 미정.
+    챗봇은 인증 미확정으로 실행용 paths에서 제외하고 x-pending-apis에 보관.
+
+    예시 정책/상품/지역/통계/URL은 구조 설명용 가상값이다. 실제 서비스 데이터로 사용하지 않는다.'
+servers:
+- url: http://localhost:5000
+  description: Flask 로컬 개발용 예시; 현재 서버가 실행 중이라는 의미 아님
+paths:
+  /api/v1/comparisons:
+    post:
+      tags:
+      - 비교
+      summary: 비교 · 생활비 계산
+      description: 'DB 저장 없음. 서울=서울월급-서울월세-생활비, 부산=부산월급-부산월세-생활비×0.949. 연간값은 반올림 전
+        월값×12. 최대 차이는 월급/월세/생활비의 절댓값 비교. 공동 최대는 모두 반환(순서 pay,rent,living), 전부 0이면
+        items=[] 및 금액=0. 지도에서 선택한 중앙값은 busan_rent에 대입 후 동일 API 호출. 반올림으로 표시 항목 합계와
+        총액이 미세하게 다를 수 있음. 입력은 Decimal로 최대 소수 4자리 검증. 중간 반올림 없이 연간값/최대 차이 선정 후 HALF_EVEN
+        소수 1자리 반환. 예: 1.25→1.2,1.35→1.4. 최대 차이 값이 표시상 같아도 반올림 전 값으로 선정한다.'
+      operationId: post_api_comparisons
+      x-mvp-phase: 1
+      x-implementation-status: planned
+      security: []
+      responses:
+        '200':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/post_api_comparisonsResponse'
+              example:
+                status: 200
+                message: 생활비 계산에 성공했습니다.
+                result:
+                  input:
+                    seoul_pay: 300
+                    busan_pay: 250
+                    seoul_rent: 80
+                    busan_rent: 50
+                    living: 100
+                  seoul:
+                    pay: 300
+                    rent: 80
+                    living: 100
+                    monthly_remaining: 120
+                    annual_remaining: 1440
+                  busan:
+                    pay: 250
+                    rent: 50
+                    living: 94.9
+                    monthly_remaining: 105.1
+                    annual_remaining: 1261.2
+                  monthly_difference: -14.9
+                  annual_difference: -178.8
+                  differences:
+                  - item: pay
+                    busan_minus_seoul: -50
+                    monthly_remaining_effect: -50
+                  - item: rent
+                    busan_minus_seoul: -30
+                    monthly_remaining_effect: 30
+                  - item: living
+                    busan_minus_seoul: -5.1
+                    monthly_remaining_effect: 5.1
+                  largest_difference:
+                    items:
+                    - pay
+                    absolute_monthly_difference: 50
+                  living_ratio: 0.949
+                  unit: 만원
+        '400':
+          description: 필수 금액 누락, 숫자 아닌 값, 음수 또는 소수 4자리 초과입니다.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                status: 400
+                message: 필수 금액 누락, 숫자 아닌 값, 음수 또는 소수 4자리 초과입니다.
+                result: null
+        '500':
+          description: 서버 내부 오류가 발생했습니다.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                status: 500
+                message: 서버 내부 오류가 발생했습니다.
+                result: null
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ComparisonInput'
+            example:
+              seoul_pay: 300
+              busan_pay: 250
+              seoul_rent: 80
+              busan_rent: 50
+              living: 100
+      x-api-id: CALC-001
+  /api/v1/policies:
+    get:
+      tags:
+      - 정책
+      summary: 정책 · 목록 검색 필터
+      description: is_visible=true만. q는 앞뒤 공백 제거 후 정책명 부분일치, 영문 대소문자 무시. 빈 검색어/카테고리
+        생략은 전체. 검색과 카테고리는 AND. 토큰 없이 조회하면 is_favorite=false. 유효 토큰 제공 시 해당 사용자의 즐겨찾기를
+        필터 결과 안에서 먼저 정렬한 뒤 페이지 분할. 같은 그룹에서는 이름,id 오름차순. 잘못되거나 만료된 토큰은 401. 빈 결과는 200/items=[].
+        favorites_only=true면 본인 즐겨찾기만 반환하며 로그인 필수. 검색/카테고리와 AND. 쿼리 boolean은 true/false만
+        허용. category는 카테고리 코드이며 응답 category_code와 동일하다. 이 조건은 원래의 즐겨찾기 우선 정렬에 더한 추가
+        설계안이다.
+      operationId: get_api_policies
+      x-mvp-phase: 1
+      x-implementation-status: planned
+      security:
+      - {}
+      - BearerAuth: []
+      responses:
+        '200':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/get_api_policiesResponse'
+              example:
+                status: 200
+                message: 목록 검색 필터에 성공했습니다.
+                result:
+                  items:
+                  - id: 11111111-1111-4111-8111-111111111111
+                    policy_name: 예시 청년 지원 정책
+                    region_codes:
+                    - EXAMPLE_DISTRICT
+                    support_summary: 지원 내용 예시
+                    application_url: https://example.com/policy
+                    is_favorite: false
+                    category_code: housing
+                  page: 1
+                  page_size: 20
+                  total: 1
+        '400':
+          description: 페이지 범위, 검색어 길이, 카테고리 코드 또는 favorites_only 값이 올바르지 않습니다.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                status: 400
+                message: 페이지 범위, 검색어 길이, 카테고리 코드 또는 favorites_only 값이 올바르지 않습니다.
+                result: null
+        '500':
+          description: 서버 내부 오류가 발생했습니다.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                status: 500
+                message: 서버 내부 오류가 발생했습니다.
+                result: null
+        '401':
+          description: 제공한 토큰이 잘못되었거나 만료되었습니다. favorites_only=true인데 로그인하지 않은 경우도
+            같습니다.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                status: 401
+                message: 제공한 토큰이 잘못되었거나 만료되었습니다. favorites_only=true인데 로그인하지 않은 경우도
+                  같습니다.
+                result: null
+      parameters:
+      - name: page
+        in: query
+        required: false
+        description: ''
+        schema:
+          type: integer
+          minimum: 1
+          default: 1
+      - name: page_size
+        in: query
+        required: false
+        description: ''
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 20
+      - name: category
+        in: query
+        required: false
+        description: ''
+        schema:
+          type: string
+          description: 카테고리 API의 code
+      - name: q
+        in: query
+        required: false
+        description: ''
+        schema:
+          type: string
+          description: ''
+          maxLength: 100
+      - name: favorites_only
+        in: query
+        required: false
+        description: 추가 설계안. true면 본인 즐겨찾기만 조회. 토큰 없으면 401. 기본 false.
+        schema:
+          type: boolean
+          default: false
+      x-api-id: POLICY-001
+  /api/v1/policies/categories:
+    get:
+      tags:
+      - 정책
+      summary: 정책 · 카테고리 조회
+      description: 노출 정책의 카테고리 목록, 이름 오름차순. 전체 버튼은 프론트에서 추가. 코드와 데이터 매핑은 수집 시 관리.
+      operationId: get_api_policies_categories
+      x-mvp-phase: 1
+      x-implementation-status: planned
+      security: []
+      responses:
+        '200':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/get_api_policies_categoriesResponse'
+              example:
+                status: 200
+                message: 카테고리 조회에 성공했습니다.
+                result:
+                  items:
+                  - code: EXAMPLE_DISTRICT
+                    name: 예시 지역
+        '500':
+          description: 서버 내부 오류가 발생했습니다.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                status: 500
+                message: 서버 내부 오류가 발생했습니다.
+                result: null
+      x-api-id: POLICY-002
+  /api/v1/financial-products:
+    get:
+      tags:
+      - 금융상품
+      summary: 금융상품 · 부산 이용 가능 상품 목록
+      description: 관리자가 부산 이용 가능 대상으로 선정하고 is_visible=true인 DB 상품만 반환. 개인 맞춤 추천 아님.
+        상품명,id 오름차순. 없는 금리 정보를 추정하지 않는다.
+      operationId: get_api_financial_products
+      x-mvp-phase: 1
+      x-implementation-status: planned
+      security: []
+      responses:
+        '200':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/get_api_financial_productsResponse'
+              example:
+                status: 200
+                message: 부산 이용 가능 상품 목록에 성공했습니다.
+                result:
+                  items:
+                  - id: 11111111-1111-4111-8111-111111111111
+                    product_name: 예시 상품
+                    company_name: 예시 금융회사
+                    product_type: deposit
+                    summary: 상품 소개 예시
+                  page: 1
+                  page_size: 20
+                  total: 1
+        '400':
+          description: 페이지 번호 또는 페이지 크기가 허용 범위를 벗어났습니다.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                status: 400
+                message: 페이지 번호 또는 페이지 크기가 허용 범위를 벗어났습니다.
+                result: null
+        '500':
+          description: 서버 내부 오류가 발생했습니다.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                status: 500
+                message: 서버 내부 오류가 발생했습니다.
+                result: null
+      parameters:
+      - name: page
+        in: query
+        required: false
+        description: ''
+        schema:
+          type: integer
+          minimum: 1
+          default: 1
+      - name: page_size
+        in: query
+        required: false
+        description: ''
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 20
+      x-api-id: PRODUCT-001
+  /api/v1/financial-products/{id}:
+    get:
+      tags:
+      - 금융상품
+      summary: 금융상품 · 상세 조회
+      description: 노출 상품만. 공식 원문 source_url 제공. 상세 조회는 결과 화면 확장 시 사용 가능.
+      operationId: get_api_financial_products_id
+      x-mvp-phase: 1
+      x-implementation-status: planned
+      security: []
+      responses:
+        '200':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/get_api_financial_products_idResponse'
+              example:
+                status: 200
+                message: 상세 조회에 성공했습니다.
+                result:
+                  id: 11111111-1111-4111-8111-111111111111
+                  product_name: 예시 상품
+                  company_name: 예시 금융회사
+                  product_type: deposit
+                  summary: 상품 소개 예시
+                  company_code: null
+                  product_code: null
+                  eligibility_text: 가입 대상 안내 예시
+                  rate_text: null
+                  limit_text: null
+                  term_text: null
+                  source_url: https://example.com/source
+                  checked_at: '2026-10-26T07:00:00Z'
+        '400':
+          description: 상품 ID가 UUID 형식이 아닙니다.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                status: 400
+                message: 상품 ID가 UUID 형식이 아닙니다.
+                result: null
+        '404':
+          description: 상품이 없거나 비노출 상태입니다.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                status: 404
+                message: 상품이 없거나 비노출 상태입니다.
+                result: null
+        '500':
+          description: 서버 내부 오류가 발생했습니다.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                status: 500
+                message: 서버 내부 오류가 발생했습니다.
+                result: null
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: ''
+        schema:
+          type: string
+          description: ''
+          format: uuid
+      x-api-id: PRODUCT-002
+  /api/v1/housing/districts:
+    get:
+      tags:
+      - 지도
+      summary: 지도 · 구군별 중앙값 월세
+      description: 부산 16개 구군(기장군 포함). DB RPC로 보증금 1000만원 환산 월세 중앙값을 집계한다. 기간 2023-09~2026-08,
+        주택유형 단독/다가구·연립다세대·오피스텔, 전용면적 0 초과 33㎡ 이하. null 환산값 제외, 음수 환산값 포함. 이름 오름차순,
+        동률 시 region_code 오름차순. median_rent는 소수 최대 4자리 API 원값(표시 반올림은 프론트). 구 선택 시 busan_rent에
+        원값 전달. 중심좌표·출처·갱신시각은 검증값 없으면 null. 집계 행이 없으면 503.
+      operationId: get_api_housing_districts
+      x-mvp-phase: 1
+      x-implementation-status: code-ready-pending-rpc-apply
+      security: []
+      responses:
+        '200':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/get_api_housing_districtsResponse'
+              example:
+                status: 200
+                message: 구군별 중앙값 월세에 성공했습니다.
+                result:
+                  metadata:
+                    rent_basis: adjusted_1000
+                    period_start: '2023-09-01'
+                    period_end: '2026-08-31'
+                    property_types:
+                    - 단독/다가구
+                    - 연립다세대
+                    - 오피스텔
+                    max_area_m2: 33
+                    target_deposit: 1000
+                    source_name: null
+                    updated_at: null
+                    unit: 만원
+                  items:
+                  - region_code: '26410'
+                    name: 금정구
+                    center_latitude: null
+                    center_longitude: null
+                    median_rent: 30
+                    sample_count: 7943
+        '503':
+          description: 지도 집계 기준 또는 데이터가 준비되지 않았습니다.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                status: 503
+                message: 지도 집계 기준 또는 데이터가 준비되지 않았습니다.
+                result: null
+        '500':
+          description: 서버 내부 오류가 발생했습니다.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                status: 500
+                message: 서버 내부 오류가 발생했습니다.
+                result: null
+      x-contract-status: contract-defined
+      x-api-id: MAP-001
+  /api/v1/housing/rankings:
+    get:
+      tags:
+      - 지도
+      summary: 지도 · 저렴한 구군 TOP 5
+      description: districts와 동일 RPC·집계 기준. median_rent null 제외 후 숫자 오름차순, 동률 region_code
+        오름차순, 이후 limit 적용. 유효 지역이 limit 미만이면 있는 만큼. 동 단위 순위 아님. limit 생략 시 5. 빈 값·비정수·소수·범위
+        밖은 400(기본값으로 치환하지 않음).
+      operationId: get_api_housing_rankings
+      x-mvp-phase: 1
+      x-implementation-status: code-ready-pending-rpc-apply
+      security: []
+      responses:
+        '200':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/get_api_housing_rankingsResponse'
+              example:
+                status: 200
+                message: 저렴한 구군 TOP 5에 성공했습니다.
+                result:
+                  metadata:
+                    rent_basis: adjusted_1000
+                    period_start: '2023-09-01'
+                    period_end: '2026-08-31'
+                    property_types:
+                    - 단독/다가구
+                    - 연립다세대
+                    - 오피스텔
+                    max_area_m2: 33
+                    target_deposit: 1000
+                    source_name: null
+                    updated_at: null
+                    unit: 만원
+                  items:
+                  - region_code: '26410'
+                    name: 금정구
+                    center_latitude: null
+                    center_longitude: null
+                    median_rent: 30
+                    sample_count: 7943
+                  - region_code: '26200'
+                    name: 영도구
+                    center_latitude: null
+                    center_longitude: null
+                    median_rent: 30.625
+                    sample_count: 1181
+                  - region_code: '26710'
+                    name: 기장군
+                    center_latitude: null
+                    center_longitude: null
+                    median_rent: 33.4125
+                    sample_count: 2405
+                  - region_code: '26380'
+                    name: 사하구
+                    center_latitude: null
+                    center_longitude: null
+                    median_rent: 35
+                    sample_count: 5198
+                  - region_code: '26320'
+                    name: 북구
+                    center_latitude: null
+                    center_longitude: null
+                    median_rent: 35.3917
+                    sample_count: 2339
+        '400':
+          description: limit은 1부터 5까지의 정수여야 합니다.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                status: 400
+                message: limit은 1부터 5까지의 정수여야 합니다.
+                result: null
+        '503':
+          description: 지도 집계 기준 또는 데이터가 준비되지 않았습니다.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                status: 503
+                message: 지도 집계 기준 또는 데이터가 준비되지 않았습니다.
+                result: null
+        '500':
+          description: 서버 내부 오류가 발생했습니다.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                status: 500
+                message: 서버 내부 오류가 발생했습니다.
+                result: null
+      parameters:
+      - name: limit
+        in: query
+        required: false
+        description: 반환 개수. 생략 시 5. 허용 값은 정수 문자열 1~5만.
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 5
+          default: 5
+      x-contract-status: contract-defined
+      x-api-id: MAP-002
+  /api/v1/regions:
+    get:
+      tags:
+      - 지역
+      summary: 지역 · 하위 지역 조회
+      description: parent_code 생략 시 부산 구군 목록. 구군 코드 제공 시 소속 동 목록. 동 코드 제공 시 빈 배열.
+        알 수 없는 코드는 404. 이름,코드 오름차순. 지역코드 체계와 법정동/행정동은 미확정.
+      operationId: get_api_regions
+      x-mvp-phase: 1
+      x-implementation-status: planned
+      security: []
+      responses:
+        '200':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/get_api_regionsResponse'
+              example:
+                status: 200
+                message: 하위 지역 조회에 성공했습니다.
+                result:
+                  items:
+                  - code: EXAMPLE_DISTRICT
+                    name: 예시 지역
+                    level: sido
+                    parent_code: null
+        '400':
+          description: parent_code는 비어 있지 않은 문자열이어야 합니다.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                status: 400
+                message: parent_code는 비어 있지 않은 문자열이어야 합니다.
+                result: null
+        '404':
+          description: parent_code에 해당하는 부산 지역이 없습니다.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                status: 404
+                message: parent_code에 해당하는 부산 지역이 없습니다.
+                result: null
+        '500':
+          description: 서버 내부 오류가 발생했습니다.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                status: 500
+                message: 서버 내부 오류가 발생했습니다.
+                result: null
+      parameters:
+      - name: parent_code
+        in: query
+        required: false
+        description: ''
+        schema:
+          type: string
+          description: ''
+      x-contract-status: schema-ready-data-definition-pending
+      x-api-id: REGION-001
+  /api/v1/users/me:
+    get:
+      tags:
+      - 회원
+      summary: 회원 · 프로필 조회
+      description: Supabase Auth access token 검증 후 sub와 동일한 id의 profiles 조회. 프로필 생성은
+        Supabase 신규 auth.users 생성 시 DB 트리거로 처리하는 설계안. 닉네임은 회원가입 metadata에서 초기화하고 이
+        API의 PATCH로 수정. metadata는 권한 판단에 사용하지 않는다. 기존 가입자의 프로필은 초기 마이그레이션으로 보완. 프로필
+        미생성은 404.
+      operationId: get_api_users_me
+      x-mvp-phase: 1
+      x-implementation-status: planned
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/get_api_users_meResponse'
+              example:
+                status: 200
+                message: 프로필 조회에 성공했습니다.
+                result:
+                  id: 11111111-1111-4111-8111-111111111111
+                  nickname: 부산살림사용자
+                  created_at: '2026-10-26T07:00:00Z'
+        '401':
+          description: 로그인이 필요한 요청이거나 제공한 토큰이 유효하지 않습니다.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                status: 401
+                message: 로그인이 필요한 요청이거나 제공한 토큰이 유효하지 않습니다.
+                result: null
+        '404':
+          description: 회원 프로필이 생성되지 않았습니다.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                status: 404
+                message: 회원 프로필이 생성되지 않았습니다.
+                result: null
+        '500':
+          description: 서버 내부 오류가 발생했습니다.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                status: 500
+                message: 서버 내부 오류가 발생했습니다.
+                result: null
+      x-api-id: USER-001
+    patch:
+      tags:
+      - 회원
+      summary: 회원 · 프로필 수정
+      description: ''
+      operationId: patch_api_users_me
+      x-mvp-phase: 1
+      x-implementation-status: planned
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/patch_api_users_meResponse'
+              example:
+                status: 200
+                message: 프로필 수정에 성공했습니다.
+                result:
+                  id: 11111111-1111-4111-8111-111111111111
+                  nickname: 부산살림사용자
+                  created_at: '2026-10-26T07:00:00Z'
+        '400':
+          description: 닉네임은 앞뒤 공백 제거 후 1~30자여야 합니다.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                status: 400
+                message: 닉네임은 앞뒤 공백 제거 후 1~30자여야 합니다.
+                result: null
+        '401':
+          description: 로그인이 필요한 요청이거나 제공한 토큰이 유효하지 않습니다.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                status: 401
+                message: 로그인이 필요한 요청이거나 제공한 토큰이 유효하지 않습니다.
+                result: null
+        '404':
+          description: 회원 프로필이 생성되지 않았습니다.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                status: 404
+                message: 회원 프로필이 생성되지 않았습니다.
+                result: null
+        '500':
+          description: 서버 내부 오류가 발생했습니다.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                status: 500
+                message: 서버 내부 오류가 발생했습니다.
+                result: null
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProfileUpdate'
+      x-api-id: USER-002
+  /api/v1/policies/{id}/favorite:
+    put:
+      tags:
+      - 즐겨찾기
+      summary: 즐겨찾기 · 등록
+      description: 토큰 sub로 사용자 식별. (user_id, policy_id) 유일 제약. 이미 등록/해제되어도 200. 존재하지
+        않거나 비노출 정책은 404.
+      operationId: put_api_policies_id_favorite
+      x-mvp-phase: 1
+      x-implementation-status: planned
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/put_api_policies_id_favoriteResponse'
+              example:
+                status: 200
+                message: 등록에 성공했습니다.
+                result: null
+        '400':
+          description: 정책 ID가 UUID 형식이 아닙니다.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                status: 400
+                message: 정책 ID가 UUID 형식이 아닙니다.
+                result: null
+        '401':
+          description: 로그인이 필요한 요청이거나 제공한 토큰이 유효하지 않습니다.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                status: 401
+                message: 로그인이 필요한 요청이거나 제공한 토큰이 유효하지 않습니다.
+                result: null
+        '404':
+          description: 정책이 없거나 비노출 상태입니다.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                status: 404
+                message: 정책이 없거나 비노출 상태입니다.
+                result: null
+        '500':
+          description: 서버 내부 오류가 발생했습니다.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                status: 500
+                message: 서버 내부 오류가 발생했습니다.
+                result: null
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: ''
+        schema:
+          type: string
+          description: ''
+          format: uuid
+      x-api-id: FAVORITE-001
+    delete:
+      tags:
+      - 즐겨찾기
+      summary: 즐겨찾기 · 해제
+      description: 토큰 sub로 사용자 식별. (user_id, policy_id) 유일 제약. 이미 등록/해제되어도 200. 존재하지
+        않거나 비노출 정책은 404.
+      operationId: delete_api_policies_id_favorite
+      x-mvp-phase: 1
+      x-implementation-status: planned
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/delete_api_policies_id_favoriteResponse'
+              example:
+                status: 200
+                message: 해제에 성공했습니다.
+                result: null
+        '400':
+          description: 정책 ID가 UUID 형식이 아닙니다.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                status: 400
+                message: 정책 ID가 UUID 형식이 아닙니다.
+                result: null
+        '401':
+          description: 로그인이 필요한 요청이거나 제공한 토큰이 유효하지 않습니다.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                status: 401
+                message: 로그인이 필요한 요청이거나 제공한 토큰이 유효하지 않습니다.
+                result: null
+        '404':
+          description: 정책이 없거나 비노출 상태입니다.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                status: 404
+                message: 정책이 없거나 비노출 상태입니다.
+                result: null
+        '500':
+          description: 서버 내부 오류가 발생했습니다.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                status: 500
+                message: 서버 내부 오류가 발생했습니다.
+                result: null
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: ''
+        schema:
+          type: string
+          description: ''
+          format: uuid
+      x-api-id: FAVORITE-002
+  /api/v1/posts:
+    get:
+      tags:
+      - 커뮤니티
+      summary: 커뮤니티 · 공개 목록 검색
+      description: 비회원 가능. 제목 또는 내용 부분일치(OR), 공백 제거, 영문 대소문자 무시. created_at 내림차순,id
+        내림차순. 삭제글 제외. 이번 단계에서 글 등록이 없으면 빈 목록도 정상. 토큰 생략 시 공개 조회 및 is_author=false.
+        유효 토큰이면 각 항목의 작성자와 대조해 is_author 반환. 잘못된 토큰은 401.
+      operationId: get_api_posts
+      x-mvp-phase: 1
+      x-implementation-status: planned
+      security:
+      - {}
+      - BearerAuth: []
+      responses:
+        '200':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/get_api_postsResponse'
+              example:
+                status: 200
+                message: 공개 목록 검색에 성공했습니다.
+                result:
+                  items:
+                  - id: 11111111-1111-4111-8111-111111111111
+                    title: 부산 생활에 대해 궁금해요
+                    author:
+                      nickname: 부산살림사용자
+                    created_at: '2026-10-26T07:00:00Z'
+                    category_code: free
+                    is_author: false
+                  page: 1
+                  page_size: 20
+                  total: 1
+        '400':
+          description: 페이지 범위 또는 검색어 길이가 올바르지 않습니다.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                status: 400
+                message: 페이지 범위 또는 검색어 길이가 올바르지 않습니다.
+                result: null
+        '500':
+          description: 서버 내부 오류가 발생했습니다.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                status: 500
+                message: 서버 내부 오류가 발생했습니다.
+                result: null
+        '401':
+          description: 로그인이 필요한 요청이거나 제공한 토큰이 유효하지 않습니다.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                status: 401
+                message: 로그인이 필요한 요청이거나 제공한 토큰이 유효하지 않습니다.
+                result: null
+      parameters:
+      - name: page
+        in: query
+        required: false
+        description: ''
+        schema:
+          type: integer
+          minimum: 1
+          default: 1
+      - name: page_size
+        in: query
+        required: false
+        description: ''
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 20
+      - name: q
+        in: query
+        required: false
+        description: ''
+        schema:
+          type: string
+          description: ''
+          maxLength: 100
+      x-api-id: COMMUNITY-001
+    post:
+      tags:
+      - 커뮤니티
+      summary: 커뮤니티 · 글 작성
+      description: ''
+      operationId: post_api_posts
+      x-mvp-phase: 1
+      x-implementation-status: planned
+      security:
+      - BearerAuth: []
+      responses:
+        '201':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/post_api_postsResponse'
+              example:
+                status: 201
+                message: 글 작성에 성공했습니다.
+                result:
+                  id: 11111111-1111-4111-8111-111111111111
+                  title: 부산 생활에 대해 궁금해요
+                  content: 부산 생활 정보를 공유해주세요.
+                  author:
+                    nickname: 부산살림사용자
+                  created_at: '2026-10-26T07:00:00Z'
+                  updated_at: '2026-10-26T07:00:00Z'
+                  category_code: free
+                  images:
+                  - id: 11111111-1111-4111-8111-111111111111
+                    url: https://example.com/resource
+                  is_author: true
+        '400':
+          description: 제목·내용·카테고리 또는 사진 정보가 올바르지 않습니다. 없는 카테고리, 없는 사진, 타인 사진, 이미 연결한
+            사진은 허용하지 않습니다.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                status: 400
+                message: 제목·내용·카테고리 또는 사진 정보가 올바르지 않습니다. 없는 카테고리, 없는 사진, 타인 사진, 이미
+                  연결한 사진은 허용하지 않습니다.
+                result: null
+        '401':
+          description: 로그인이 필요한 요청이거나 제공한 토큰이 유효하지 않습니다.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                status: 401
+                message: 로그인이 필요한 요청이거나 제공한 토큰이 유효하지 않습니다.
+                result: null
+        '500':
+          description: 서버 내부 오류가 발생했습니다.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                status: 500
+                message: 서버 내부 오류가 발생했습니다.
+                result: null
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PostInput'
+      x-api-id: COMMUNITY-002
+  /api/v1/posts/categories:
+    get:
+      tags:
+      - 커뮤니티
+      summary: 커뮤니티 · 카테고리 조회
+      description: 카테고리 실제 항목은 추후 확정; 목록 표시명과 작성용 코드를 함께 제공.
+      operationId: get_api_posts_categories
+      x-mvp-phase: 1
+      x-implementation-status: planned
+      security: []
+      responses:
+        '200':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/get_api_posts_categoriesResponse'
+              example:
+                status: 200
+                message: 카테고리 조회에 성공했습니다.
+                result:
+                  items:
+                  - code: free
+                    name: 자유게시판
+        '500':
+          description: 서버 내부 오류가 발생했습니다.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                status: 500
+                message: 서버 내부 오류가 발생했습니다.
+                result: null
+      x-api-id: COMMUNITY-003
+  /api/v1/posts/{id}:
+    get:
+      tags:
+      - 커뮤니티
+      summary: 커뮤니티 · 공개 글 상세
+      description: ' 토큰 생략 시 공개 조회 및 is_author=false. 유효 토큰이면 각 항목의 작성자와 대조해 is_author
+        반환. 잘못된 토큰은 401.'
+      operationId: get_api_posts_id
+      x-mvp-phase: 1
+      x-implementation-status: planned
+      security:
+      - {}
+      - BearerAuth: []
+      responses:
+        '200':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/get_api_posts_idResponse'
+              example:
+                status: 200
+                message: 공개 글 상세에 성공했습니다.
+                result:
+                  id: 11111111-1111-4111-8111-111111111111
+                  title: 부산 생활에 대해 궁금해요
+                  content: 부산 생활 정보를 공유해주세요.
+                  author:
+                    nickname: 부산살림사용자
+                  created_at: '2026-10-26T07:00:00Z'
+                  updated_at: '2026-10-26T07:00:00Z'
+                  category_code: free
+                  images:
+                  - id: 11111111-1111-4111-8111-111111111111
+                    url: https://example.com/resource
+                  is_author: false
+        '400':
+          description: 게시글 ID가 UUID 형식이 아닙니다.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                status: 400
+                message: 게시글 ID가 UUID 형식이 아닙니다.
+                result: null
+        '404':
+          description: 게시글이 없거나 삭제되었습니다.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                status: 404
+                message: 게시글이 없거나 삭제되었습니다.
+                result: null
+        '500':
+          description: 서버 내부 오류가 발생했습니다.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                status: 500
+                message: 서버 내부 오류가 발생했습니다.
+                result: null
+        '401':
+          description: 로그인이 필요한 요청이거나 제공한 토큰이 유효하지 않습니다.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                status: 401
+                message: 로그인이 필요한 요청이거나 제공한 토큰이 유효하지 않습니다.
+                result: null
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: ''
+        schema:
+          type: string
+          description: ''
+          format: uuid
+      x-api-id: COMMUNITY-004
+    delete:
+      tags:
+      - 커뮤니티
+      summary: 커뮤니티 · 글 삭제
+      description: 작성자만 삭제. 댓글과 연결 사진도 공개 조회에서 제외. 연결 해제 및 저장소 파일 정리는 서버 처리.
+      operationId: delete_api_posts_id
+      x-mvp-phase: 1
+      x-implementation-status: planned
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/delete_api_posts_idResponse'
+              example:
+                status: 200
+                message: 글 삭제에 성공했습니다.
+                result: null
+        '400':
+          description: 게시글 ID가 UUID 형식이 아닙니다.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                status: 400
+                message: 게시글 ID가 UUID 형식이 아닙니다.
+                result: null
+        '401':
+          description: 로그인이 필요한 요청이거나 제공한 토큰이 유효하지 않습니다.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                status: 401
+                message: 로그인이 필요한 요청이거나 제공한 토큰이 유효하지 않습니다.
+                result: null
+        '403':
+          description: 본인이 작성한 게시글만 삭제할 수 있습니다.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                status: 403
+                message: 본인이 작성한 게시글만 삭제할 수 있습니다.
+                result: null
+        '404':
+          description: 게시글이 없거나 삭제되었습니다.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                status: 404
+                message: 게시글이 없거나 삭제되었습니다.
+                result: null
+        '500':
+          description: 서버 내부 오류가 발생했습니다.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                status: 500
+                message: 서버 내부 오류가 발생했습니다.
+                result: null
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: ''
+        schema:
+          type: string
+          description: ''
+          format: uuid
+      x-api-id: COMMUNITY-005
+  /api/v1/posts/{id}/comments:
+    get:
+      tags:
+      - 커뮤니티
+      summary: 커뮤니티 · 공개 댓글 목록
+      description: created_at,id 오름차순. 삭제글의 댓글 조회는 404. 토큰 생략 시 공개 조회 및 is_author=false.
+        유효 토큰이면 각 항목의 작성자와 대조해 is_author 반환. 잘못된 토큰은 401.
+      operationId: get_api_posts_id_comments
+      x-mvp-phase: 1
+      x-implementation-status: planned
+      security:
+      - {}
+      - BearerAuth: []
+      responses:
+        '200':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/get_api_posts_id_commentsResponse'
+              example:
+                status: 200
+                message: 공개 댓글 목록에 성공했습니다.
+                result:
+                  items:
+                  - id: 11111111-1111-4111-8111-111111111111
+                    content: 부산 생활 정보를 공유해주세요.
+                    author:
+                      nickname: 부산살림사용자
+                    created_at: '2026-10-26T07:00:00Z'
+                    is_author: false
+                  page: 1
+                  page_size: 20
+                  total: 1
+        '400':
+          description: 게시글 ID 또는 페이지 범위가 올바르지 않습니다.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                status: 400
+                message: 게시글 ID 또는 페이지 범위가 올바르지 않습니다.
+                result: null
+        '404':
+          description: 게시글이 없거나 삭제되었습니다.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                status: 404
+                message: 게시글이 없거나 삭제되었습니다.
+                result: null
+        '500':
+          description: 서버 내부 오류가 발생했습니다.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                status: 500
+                message: 서버 내부 오류가 발생했습니다.
+                result: null
+        '401':
+          description: 로그인이 필요한 요청이거나 제공한 토큰이 유효하지 않습니다.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                status: 401
+                message: 로그인이 필요한 요청이거나 제공한 토큰이 유효하지 않습니다.
+                result: null
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: ''
+        schema:
+          type: string
+          description: ''
+          format: uuid
+      - name: page
+        in: query
+        required: false
+        description: ''
+        schema:
+          type: integer
+          minimum: 1
+          default: 1
+      - name: page_size
+        in: query
+        required: false
+        description: ''
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 20
+      x-api-id: COMMUNITY-006
+    post:
+      tags:
+      - 커뮤니티
+      summary: 커뮤니티 · 댓글 작성
+      description: 본문 공백 제거 후 1~1000자. 대댓글 없음.
+      operationId: post_api_posts_id_comments
+      x-mvp-phase: 1
+      x-implementation-status: planned
+      security:
+      - BearerAuth: []
+      responses:
+        '201':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/post_api_posts_id_commentsResponse'
+              example:
+                status: 201
+                message: 댓글 작성에 성공했습니다.
+                result:
+                  id: 11111111-1111-4111-8111-111111111111
+                  content: 부산 생활 정보를 공유해주세요.
+                  author:
+                    nickname: 부산살림사용자
+                  created_at: '2026-10-26T07:00:00Z'
+                  is_author: true
+        '400':
+          description: 게시글 ID가 올바르지 않거나 댓글이 공백 제거 후 1~1000자가 아닙니다.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                status: 400
+                message: 게시글 ID가 올바르지 않거나 댓글이 공백 제거 후 1~1000자가 아닙니다.
+                result: null
+        '401':
+          description: 로그인이 필요한 요청이거나 제공한 토큰이 유효하지 않습니다.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                status: 401
+                message: 로그인이 필요한 요청이거나 제공한 토큰이 유효하지 않습니다.
+                result: null
+        '404':
+          description: 게시글이 없거나 삭제되었습니다.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                status: 404
+                message: 게시글이 없거나 삭제되었습니다.
+                result: null
+        '500':
+          description: 서버 내부 오류가 발생했습니다.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                status: 500
+                message: 서버 내부 오류가 발생했습니다.
+                result: null
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CommentInput'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: ''
+        schema:
+          type: string
+          description: ''
+          format: uuid
+      x-api-id: COMMUNITY-007
+  /api/v1/comments/{id}:
+    delete:
+      tags:
+      - 커뮤니티
+      summary: 커뮤니티 · 댓글 삭제
+      description: 댓글 작성자만 삭제.
+      operationId: delete_api_comments_id
+      x-mvp-phase: 1
+      x-implementation-status: planned
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/delete_api_comments_idResponse'
+              example:
+                status: 200
+                message: 댓글 삭제에 성공했습니다.
+                result: null
+        '400':
+          description: 댓글 ID가 UUID 형식이 아닙니다.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                status: 400
+                message: 댓글 ID가 UUID 형식이 아닙니다.
+                result: null
+        '401':
+          description: 로그인이 필요한 요청이거나 제공한 토큰이 유효하지 않습니다.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                status: 401
+                message: 로그인이 필요한 요청이거나 제공한 토큰이 유효하지 않습니다.
+                result: null
+        '403':
+          description: 본인이 작성한 댓글만 삭제할 수 있습니다.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                status: 403
+                message: 본인이 작성한 댓글만 삭제할 수 있습니다.
+                result: null
+        '404':
+          description: 댓글이 없거나 이미 삭제되었습니다.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                status: 404
+                message: 댓글이 없거나 이미 삭제되었습니다.
+                result: null
+        '500':
+          description: 서버 내부 오류가 발생했습니다.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                status: 500
+                message: 서버 내부 오류가 발생했습니다.
+                result: null
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: ''
+        schema:
+          type: string
+          description: ''
+          format: uuid
+      x-api-id: COMMUNITY-008
+  /api/v1/uploads/images:
+    post:
+      tags:
+      - 커뮤니티
+      summary: 커뮤니티 · 사진 업로드
+      description: '설계 기본안: JPEG/PNG/WebP 한 파일 최대 5MiB, 글당 최대 5장. 실제 파일 형식 검사, EXIF
+        제거, 임의 파일명, 실행불가 저장. 본인 업로드만 글에 연결. 미연결 파일 정리 정책은 구현 시 설정.'
+      operationId: post_api_uploads_images
+      x-mvp-phase: 1
+      x-implementation-status: planned
+      security:
+      - BearerAuth: []
+      responses:
+        '201':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/post_api_uploads_imagesResponse'
+              example:
+                status: 201
+                message: 사진 업로드에 성공했습니다.
+                result:
+                  id: 11111111-1111-4111-8111-111111111111
+                  url: https://example.com/resource
+        '400':
+          description: multipart/form-data의 file이 누락되었거나 파일이 비어 있거나 손상되었습니다.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                status: 400
+                message: multipart/form-data의 file이 누락되었거나 파일이 비어 있거나 손상되었습니다.
+                result: null
+        '401':
+          description: 로그인이 필요한 요청이거나 제공한 토큰이 유효하지 않습니다.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                status: 401
+                message: 로그인이 필요한 요청이거나 제공한 토큰이 유효하지 않습니다.
+                result: null
+        '500':
+          description: 서버 내부 오류가 발생했습니다.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                status: 500
+                message: 서버 내부 오류가 발생했습니다.
+                result: null
+        '413':
+          description: 사진 파일이 최대 크기 5MiB를 초과했습니다.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                status: 413
+                message: 사진 파일이 최대 크기 5MiB를 초과했습니다.
+                result: null
+        '415':
+          description: 지원하지 않는 사진 형식입니다. JPEG, PNG, WebP만 허용합니다.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                status: 415
+                message: 지원하지 않는 사진 형식입니다. JPEG, PNG, WebP만 허용합니다.
+                result: null
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              additionalProperties: false
+              required:
+              - file
+              properties:
+                file:
+                  type: string
+                  description: ''
+                  format: binary
+      x-api-id: COMMUNITY-009
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: 'Supabase Auth access token. Authorization: Bearer <access_token>.
+        Flask는 프로젝트의 서명키로 서명 및 만료, issuer, audience 검증 후 sub를 사용자 ID로 사용. refresh
+        token은 Flask 서비스 API로 보내지 않는다.'
+  schemas:
+    Error:
+      type: object
+      additionalProperties: false
+      required:
+      - status
+      - message
+      - result
+      properties:
+        status:
+          type: integer
+          enum:
+          - 400
+          - 401
+          - 403
+          - 404
+          - 413
+          - 415
+          - 429
+          - 500
+          - 503
+        message:
+          type: string
+        result:
+          type: object
+          nullable: true
+          enum:
+          - null
+      example:
+        status: 400
+        message: 입력값을 확인해주세요.
+        result: null
+    ComparisonInput:
+      type: object
+      additionalProperties: false
+      required:
+      - seoul_pay
+      - busan_pay
+      - seoul_rent
+      - busan_rent
+      - living
+      properties:
+        seoul_pay:
+          type: number
+          description: 서울 월급 (만원); JSON number, 0 이상, 소수 최대 4자리. Decimal 검증.
+          minimum: 0
+          x-max-decimal-places: 4
+        busan_pay:
+          type: number
+          description: 부산 월급 (만원); JSON number, 0 이상, 소수 최대 4자리. Decimal 검증.
+          minimum: 0
+          x-max-decimal-places: 4
+        seoul_rent:
+          type: number
+          description: 서울 월세; 사용자 입력 (만원); JSON number, 0 이상, 소수 최대 4자리. Decimal 검증.
+          minimum: 0
+          x-max-decimal-places: 4
+        busan_rent:
+          type: number
+          description: 부산 월세; 사용자 입력 (만원); JSON number, 0 이상, 소수 최대 4자리. Decimal 검증.
+          minimum: 0
+          x-max-decimal-places: 4
+        living:
+          type: number
+          description: 서울 기준 생활비 (만원); JSON number, 0 이상, 소수 최대 4자리. Decimal 검증.
+          minimum: 0
+          x-max-decimal-places: 4
+    CityAmounts:
+      type: object
+      additionalProperties: false
+      required:
+      - pay
+      - rent
+      - living
+      - monthly_remaining
+      - annual_remaining
+      properties:
+        pay:
+          type: number
+          description: 월급
+        rent:
+          type: number
+          description: 월세
+        living:
+          type: number
+          description: 생활비
+        monthly_remaining:
+          type: number
+          description: 월 남는 돈
+        annual_remaining:
+          type: number
+          description: 연 남는 돈
+    Difference:
+      type: object
+      additionalProperties: false
+      required:
+      - item
+      - busan_minus_seoul
+      - monthly_remaining_effect
+      properties:
+        item:
+          type: string
+          description: ''
+          enum:
+          - pay
+          - rent
+          - living
+        busan_minus_seoul:
+          type: number
+          description: 부산 항목 값 - 서울 항목 값
+        monthly_remaining_effect:
+          type: number
+          description: 월급은 부산-서울, 지출은 서울-부산. 양수일수록 부산 잔여금 증가
+    LargestDifference:
+      type: object
+      additionalProperties: false
+      required:
+      - items
+      - absolute_monthly_difference
+      properties:
+        items:
+          type: array
+          items:
+            type: string
+            description: ''
+            enum:
+            - pay
+            - rent
+            - living
+        absolute_monthly_difference:
+          type: number
+          description: 반올림 전 절댓값으로 선정 후 표시 반올림
+          minimum: 0
+    ComparisonResult:
+      type: object
+      additionalProperties: false
+      required:
+      - input
+      - seoul
+      - busan
+      - monthly_difference
+      - annual_difference
+      - differences
+      - largest_difference
+      - living_ratio
+      - unit
+      properties:
+        input:
+          $ref: '#/components/schemas/ComparisonInput'
+        seoul:
+          $ref: '#/components/schemas/CityAmounts'
+        busan:
+          $ref: '#/components/schemas/CityAmounts'
+        monthly_difference:
+          type: number
+          description: 부산 월 잔여금 - 서울 월 잔여금
+        annual_difference:
+          type: number
+          description: 반올림 전 월 차이 × 12
+        differences:
+          type: array
+          items:
+            $ref: '#/components/schemas/Difference'
+          minItems: 3
+          maxItems: 3
+        largest_difference:
+          $ref: '#/components/schemas/LargestDifference'
+        living_ratio:
+          type: number
+          description: ''
+          enum:
+          - 0.949
+        unit:
+          type: string
+          description: ''
+          enum:
+          - 만원
+    PolicySummary:
+      type: object
+      additionalProperties: false
+      required:
+      - id
+      - policy_name
+      - category_code
+      - region_codes
+      - support_summary
+      - application_url
+      - is_favorite
+      properties:
+        id:
+          type: string
+          description: 내부 UUID
+          format: uuid
+        policy_name:
+          type: string
+          description: 정책명
+        region_codes:
+          type: array
+          items:
+            type: string
+            description: 해당 지역 코드
+        support_summary:
+          type: string
+          description: 지원 내용 요약
+        application_url:
+          type: string
+          description: 외부 상세/안내 페이지. 없으면 null, 버튼 비활성화
+          format: uri
+          nullable: true
+        is_favorite:
+          type: boolean
+          description: 인증 사용자의 즐겨찾기 여부. 토큰 미제공 시 false.
+        category_code:
+          type: string
+          description: 정책 카테고리 code. /api/v1/policies/categories의 code와 일치.
+    ProductSummary:
+      type: object
+      additionalProperties: false
+      required:
+      - id
+      - product_name
+      - company_name
+      - product_type
+      - summary
+      properties:
+        id:
+          type: string
+          description: 내부 UUID
+          format: uuid
+        product_name:
+          type: string
+          description: 상품명
+        company_name:
+          type: string
+          description: 금융회사명
+        product_type:
+          type: string
+          description: 상품 유형
+          enum:
+          - deposit
+          - savings
+          - loan
+          - other
+        summary:
+          type: string
+          description: 소개 요약
+    Product:
+      type: object
+      additionalProperties: false
+      required:
+      - id
+      - product_name
+      - company_name
+      - product_type
+      - summary
+      - company_code
+      - product_code
+      - eligibility_text
+      - rate_text
+      - limit_text
+      - term_text
+      - source_url
+      - checked_at
+      properties:
+        id:
+          type: string
+          description: 내부 UUID
+          format: uuid
+        product_name:
+          type: string
+          description: 상품명
+        company_name:
+          type: string
+          description: 금융회사명
+        product_type:
+          type: string
+          description: 상품 유형
+          enum:
+          - deposit
+          - savings
+          - loan
+          - other
+        summary:
+          type: string
+          description: 소개 요약
+        company_code:
+          type: string
+          description: 원천 금융회사 코드
+          nullable: true
+        product_code:
+          type: string
+          description: 원천 금융상품 코드
+          nullable: true
+        eligibility_text:
+          type: string
+          description: 가입 대상
+        rate_text:
+          type: string
+          description: 금리 및 조건 원문; 확인하지 못하면 null
+          nullable: true
+        limit_text:
+          type: string
+          description: 한도 원문
+          nullable: true
+        term_text:
+          type: string
+          description: 기간 원문
+          nullable: true
+        source_url:
+          type: string
+          description: 공식 원문 URL
+          format: uri
+        checked_at:
+          type: string
+          description: UTC 기준 RFC3339 시각
+          format: date-time
+    Region:
+      type: object
+      additionalProperties: false
+      required:
+      - code
+      - name
+      - level
+      - parent_code
+      properties:
+        code:
+          type: string
+          description: 지역 코드 (체계 미정)
+        name:
+          type: string
+          description: 지역명
+        level:
+          type: string
+          description: '지역 단계: sido=시도, sigungu=시군구, dong=동. 코드 값 자체가 아님.'
+          enum:
+          - sido
+          - sigungu
+          - dong
+        parent_code:
+          type: string
+          description: 지역 코드 (체계 미정)
+          nullable: true
+    PolicyPage:
+      type: object
+      additionalProperties: false
+      required:
+      - items
+      - page
+      - page_size
+      - total
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/PolicySummary'
+        page:
+          type: integer
+          minimum: 1
+        page_size:
+          type: integer
+          minimum: 1
+          maximum: 100
+        total:
+          type: integer
+          minimum: 0
+    Category:
+      type: object
+      additionalProperties: false
+      required:
+      - code
+      - name
+      properties:
+        code:
+          type: string
+          description: ''
+        name:
+          type: string
+          description: ''
+    Categories:
+      type: object
+      additionalProperties: false
+      required:
+      - items
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Category'
+    ProductPage:
+      type: object
+      additionalProperties: false
+      required:
+      - items
+      - page
+      - page_size
+      - total
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProductSummary'
+        page:
+          type: integer
+          minimum: 1
+        page_size:
+          type: integer
+          minimum: 1
+          maximum: 100
+        total:
+          type: integer
+          minimum: 0
+    HousingMetadata:
+      type: object
+      additionalProperties: false
+      required:
+      - rent_basis
+      - period_start
+      - period_end
+      - property_types
+      - max_area_m2
+      - target_deposit
+      - source_name
+      - updated_at
+      - unit
+      properties:
+        rent_basis:
+          type: string
+          description: 고정 집계 기준. 사용자 선택 파라미터 아님. adjusted_1000=보증금 1000만원 환산 월세
+          enum:
+          - adjusted_1000
+        period_start:
+          type: string
+          description: ''
+          format: date
+        period_end:
+          type: string
+          description: ''
+          format: date
+        property_types:
+          type: array
+          items:
+            type: string
+            description: ''
+        max_area_m2:
+          type: number
+          description: ''
+          nullable: true
+        target_deposit:
+          type: integer
+          description: 환산 기준 보증금(만원)
+          enum:
+          - 1000
+        source_name:
+          type: string
+          description: 검증된 수집 출처. 없으면 null
+          nullable: true
+        updated_at:
+          type: string
+          description: 검증된 원천 데이터 갱신 시각. 요청 시각·created_at 대용 금지. 없으면 null
+          format: date-time
+          nullable: true
+        unit:
+          type: string
+          description: ''
+          enum:
+          - 만원
+    DistrictRent:
+      type: object
+      additionalProperties: false
+      required:
+      - region_code
+      - name
+      - center_latitude
+      - center_longitude
+      - median_rent
+      - sample_count
+      properties:
+        region_code:
+          type: string
+          description: ''
+        name:
+          type: string
+          description: ''
+        center_latitude:
+          type: number
+          description: 검증된 구군 중심 위도. 없으면 null(0,0 등 임의값 금지)
+          minimum: -90
+          maximum: 90
+          nullable: true
+        center_longitude:
+          type: number
+          description: 검증된 구군 중심 경도. 없으면 null
+          minimum: -180
+          maximum: 180
+          nullable: true
+        median_rent:
+          type: number
+          description: 데이터 없으면 null. 0원과 구별. 소수 최대 4자리
+          nullable: true
+        sample_count:
+          type: integer
+          minimum: 0
+    DistrictRents:
+      type: object
+      additionalProperties: false
+      required:
+      - metadata
+      - items
+      properties:
+        metadata:
+          $ref: '#/components/schemas/HousingMetadata'
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/DistrictRent'
+    Regions:
+      type: object
+      additionalProperties: false
+      required:
+      - items
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Region'
+    Profile:
+      type: object
+      additionalProperties: false
+      required:
+      - id
+      - nickname
+      - created_at
+      properties:
+        id:
+          type: string
+          description: 내부 UUID
+          format: uuid
+        nickname:
+          type: string
+          description: 닉네임
+        created_at:
+          type: string
+          description: UTC 기준 RFC3339 시각
+          format: date-time
+    ProfileUpdate:
+      type: object
+      additionalProperties: false
+      required:
+      - nickname
+      properties:
+        nickname:
+          type: string
+          description: 닉네임
+          minLength: 1
+          maxLength: 30
+    PostInput:
+      type: object
+      additionalProperties: false
+      required:
+      - title
+      - content
+      - category_code
+      properties:
+        title:
+          type: string
+          description: 제목
+          minLength: 1
+          maxLength: 100
+        content:
+          type: string
+          description: 일반 텍스트 본문
+          minLength: 1
+          maxLength: 10000
+        category_code:
+          type: string
+          description: 게시판 카테고리 코드
+        image_ids:
+          type: array
+          items:
+            type: string
+            description: ''
+            format: uuid
+          maxItems: 5
+          uniqueItems: true
+      description: 제목/내용 앞뒤 공백 제거 후 길이 검증. image_ids 생략하면 사진 없음. 본인 소유 미사용 이미지 ID만
+        연결. 카테고리는 서버 목록 검증.
+    Post:
+      type: object
+      additionalProperties: false
+      required:
+      - id
+      - title
+      - content
+      - author
+      - created_at
+      - updated_at
+      - category_code
+      - images
+      - is_author
+      properties:
+        id:
+          type: string
+          description: 내부 UUID
+          format: uuid
+        title:
+          type: string
+          description: 제목
+        content:
+          type: string
+          description: 일반 텍스트 본문
+        author:
+          type: object
+          additionalProperties: false
+          required:
+          - nickname
+          properties:
+            nickname:
+              type: string
+              description: 작성자 표시명
+        created_at:
+          type: string
+          description: UTC 기준 RFC3339 시각
+          format: date-time
+        updated_at:
+          type: string
+          description: UTC 기준 RFC3339 시각
+          format: date-time
+        category_code:
+          type: string
+          description: 게시판 카테고리 코드
+        images:
+          type: array
+          items:
+            $ref: '#/components/schemas/Image'
+        is_author:
+          type: boolean
+          description: 유효 토큰의 sub와 DB 작성자 ID가 같으면 true. 비회원은 false. UI 표시용이며 삭제 시
+            서버가 별도 권한 검사.
+    PostSummary:
+      type: object
+      additionalProperties: false
+      required:
+      - id
+      - title
+      - author
+      - created_at
+      - category_code
+      - is_author
+      properties:
+        id:
+          type: string
+          description: 내부 UUID
+          format: uuid
+        title:
+          type: string
+          description: 제목
+        author:
+          type: object
+          additionalProperties: false
+          required:
+          - nickname
+          properties:
+            nickname:
+              type: string
+              description: 작성자 표시명
+        created_at:
+          type: string
+          description: UTC 기준 RFC3339 시각
+          format: date-time
+        category_code:
+          type: string
+          description: 게시판 카테고리 코드
+        is_author:
+          type: boolean
+          description: 유효 토큰의 sub와 DB 작성자 ID가 같으면 true. 비회원은 false. UI 표시용이며 삭제 시
+            서버가 별도 권한 검사.
+    PostSummaryPage:
+      type: object
+      additionalProperties: false
+      required:
+      - items
+      - page
+      - page_size
+      - total
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/PostSummary'
+        page:
+          type: integer
+          format: int64
+          description: 페이지
+          minimum: 1
+        page_size:
+          type: integer
+          format: int64
+          description: 페이지 크기
+          minimum: 1
+          maximum: 100
+        total:
+          type: integer
+          format: int64
+          description: 총 건수
+          minimum: 0
+    Image:
+      type: object
+      additionalProperties: false
+      required:
+      - id
+      - url
+      properties:
+        id:
+          type: string
+          description: ''
+          format: uuid
+        url:
+          type: string
+          description: ''
+          format: uri
+    CommentInput:
+      type: object
+      additionalProperties: false
+      required:
+      - content
+      properties:
+        content:
+          type: string
+          description: ''
+          minLength: 1
+          maxLength: 1000
+    Comment:
+      type: object
+      additionalProperties: false
+      required:
+      - id
+      - content
+      - author
+      - created_at
+      - is_author
+      properties:
+        id:
+          type: string
+          description: ''
+          format: uuid
+        content:
+          type: string
+          description: ''
+        author:
+          type: object
+          additionalProperties: false
+          required:
+          - nickname
+          properties:
+            nickname:
+              type: string
+              description: ''
+        created_at:
+          type: string
+          description: ''
+          format: date-time
+        is_author:
+          type: boolean
+          description: 유효 토큰의 sub와 DB 작성자 ID가 같으면 true. 비회원은 false. UI 표시용이며 삭제 시
+            서버가 별도 권한 검사.
+    CommentPage:
+      type: object
+      additionalProperties: false
+      required:
+      - items
+      - page
+      - page_size
+      - total
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Comment'
+        page:
+          type: integer
+          minimum: 1
+        page_size:
+          type: integer
+          minimum: 1
+          maximum: 100
+        total:
+          type: integer
+          minimum: 0
+    ChatInput:
+      type: object
+      additionalProperties: false
+      required:
+      - message
+      properties:
+        message:
+          type: string
+          description: ''
+          minLength: 1
+          maxLength: 2000
+    ChatSource:
+      type: object
+      additionalProperties: false
+      required:
+      - title
+      - url
+      properties:
+        title:
+          type: string
+          description: ''
+        url:
+          type: string
+          description: ''
+          format: uri
+    ChatAnswer:
+      type: object
+      additionalProperties: false
+      required:
+      - status
+      - answer
+      - sources
+      properties:
+        status:
+          type: string
+          description: ''
+          enum:
+          - answered
+          - insufficient_evidence
+        answer:
+          type: string
+          description: ''
+        sources:
+          type: array
+          items:
+            $ref: '#/components/schemas/ChatSource'
+    post_api_comparisonsResponse:
+      type: object
+      additionalProperties: false
+      required:
+      - status
+      - message
+      - result
+      properties:
+        status:
+          type: integer
+          enum:
+          - 200
+          description: HTTP 상태코드와 동일
+        message:
+          type: string
+          description: 처리 결과 메시지
+        result:
+          $ref: '#/components/schemas/ComparisonResult'
+    get_api_policiesResponse:
+      type: object
+      additionalProperties: false
+      required:
+      - status
+      - message
+      - result
+      properties:
+        status:
+          type: integer
+          enum:
+          - 200
+          description: HTTP 상태코드와 동일
+        message:
+          type: string
+          description: 처리 결과 메시지
+        result:
+          $ref: '#/components/schemas/PolicyPage'
+    get_api_policies_categoriesResponse:
+      type: object
+      additionalProperties: false
+      required:
+      - status
+      - message
+      - result
+      properties:
+        status:
+          type: integer
+          enum:
+          - 200
+          description: HTTP 상태코드와 동일
+        message:
+          type: string
+          description: 처리 결과 메시지
+        result:
+          $ref: '#/components/schemas/Categories'
+    get_api_financial_productsResponse:
+      type: object
+      additionalProperties: false
+      required:
+      - status
+      - message
+      - result
+      properties:
+        status:
+          type: integer
+          enum:
+          - 200
+          description: HTTP 상태코드와 동일
+        message:
+          type: string
+          description: 처리 결과 메시지
+        result:
+          $ref: '#/components/schemas/ProductPage'
+    get_api_financial_products_idResponse:
+      type: object
+      additionalProperties: false
+      required:
+      - status
+      - message
+      - result
+      properties:
+        status:
+          type: integer
+          enum:
+          - 200
+          description: HTTP 상태코드와 동일
+        message:
+          type: string
+          description: 처리 결과 메시지
+        result:
+          $ref: '#/components/schemas/Product'
+    get_api_housing_districtsResponse:
+      type: object
+      additionalProperties: false
+      required:
+      - status
+      - message
+      - result
+      properties:
+        status:
+          type: integer
+          enum:
+          - 200
+          description: HTTP 상태코드와 동일
+        message:
+          type: string
+          description: 처리 결과 메시지
+        result:
+          $ref: '#/components/schemas/DistrictRents'
+    get_api_housing_rankingsResponse:
+      type: object
+      additionalProperties: false
+      required:
+      - status
+      - message
+      - result
+      properties:
+        status:
+          type: integer
+          enum:
+          - 200
+          description: HTTP 상태코드와 동일
+        message:
+          type: string
+          description: 처리 결과 메시지
+        result:
+          $ref: '#/components/schemas/DistrictRents'
+    get_api_regionsResponse:
+      type: object
+      additionalProperties: false
+      required:
+      - status
+      - message
+      - result
+      properties:
+        status:
+          type: integer
+          enum:
+          - 200
+          description: HTTP 상태코드와 동일
+        message:
+          type: string
+          description: 처리 결과 메시지
+        result:
+          $ref: '#/components/schemas/Regions'
+    get_api_users_meResponse:
+      type: object
+      additionalProperties: false
+      required:
+      - status
+      - message
+      - result
+      properties:
+        status:
+          type: integer
+          enum:
+          - 200
+          description: HTTP 상태코드와 동일
+        message:
+          type: string
+          description: 처리 결과 메시지
+        result:
+          $ref: '#/components/schemas/Profile'
+    patch_api_users_meResponse:
+      type: object
+      additionalProperties: false
+      required:
+      - status
+      - message
+      - result
+      properties:
+        status:
+          type: integer
+          enum:
+          - 200
+          description: HTTP 상태코드와 동일
+        message:
+          type: string
+          description: 처리 결과 메시지
+        result:
+          $ref: '#/components/schemas/Profile'
+    put_api_policies_id_favoriteResponse:
+      type: object
+      additionalProperties: false
+      required:
+      - status
+      - message
+      - result
+      properties:
+        status:
+          type: integer
+          enum:
+          - 200
+          description: HTTP 상태코드와 동일
+        message:
+          type: string
+          description: 처리 결과 메시지
+        result:
+          type: object
+          nullable: true
+          enum:
+          - null
+    delete_api_policies_id_favoriteResponse:
+      type: object
+      additionalProperties: false
+      required:
+      - status
+      - message
+      - result
+      properties:
+        status:
+          type: integer
+          enum:
+          - 200
+          description: HTTP 상태코드와 동일
+        message:
+          type: string
+          description: 처리 결과 메시지
+        result:
+          type: object
+          nullable: true
+          enum:
+          - null
+    get_api_postsResponse:
+      type: object
+      additionalProperties: false
+      required:
+      - status
+      - message
+      - result
+      properties:
+        status:
+          type: integer
+          enum:
+          - 200
+          description: HTTP 상태코드와 동일
+        message:
+          type: string
+          description: 처리 결과 메시지
+        result:
+          $ref: '#/components/schemas/PostSummaryPage'
+    post_api_postsResponse:
+      type: object
+      additionalProperties: false
+      required:
+      - status
+      - message
+      - result
+      properties:
+        status:
+          type: integer
+          enum:
+          - 201
+          description: HTTP 상태코드와 동일
+        message:
+          type: string
+          description: 처리 결과 메시지
+        result:
+          $ref: '#/components/schemas/Post'
+    get_api_posts_categoriesResponse:
+      type: object
+      additionalProperties: false
+      required:
+      - status
+      - message
+      - result
+      properties:
+        status:
+          type: integer
+          enum:
+          - 200
+          description: HTTP 상태코드와 동일
+        message:
+          type: string
+          description: 처리 결과 메시지
+        result:
+          $ref: '#/components/schemas/Categories'
+    get_api_posts_idResponse:
+      type: object
+      additionalProperties: false
+      required:
+      - status
+      - message
+      - result
+      properties:
+        status:
+          type: integer
+          enum:
+          - 200
+          description: HTTP 상태코드와 동일
+        message:
+          type: string
+          description: 처리 결과 메시지
+        result:
+          $ref: '#/components/schemas/Post'
+    delete_api_posts_idResponse:
+      type: object
+      additionalProperties: false
+      required:
+      - status
+      - message
+      - result
+      properties:
+        status:
+          type: integer
+          enum:
+          - 200
+          description: HTTP 상태코드와 동일
+        message:
+          type: string
+          description: 처리 결과 메시지
+        result:
+          type: object
+          nullable: true
+          enum:
+          - null
+    get_api_posts_id_commentsResponse:
+      type: object
+      additionalProperties: false
+      required:
+      - status
+      - message
+      - result
+      properties:
+        status:
+          type: integer
+          enum:
+          - 200
+          description: HTTP 상태코드와 동일
+        message:
+          type: string
+          description: 처리 결과 메시지
+        result:
+          $ref: '#/components/schemas/CommentPage'
+    post_api_posts_id_commentsResponse:
+      type: object
+      additionalProperties: false
+      required:
+      - status
+      - message
+      - result
+      properties:
+        status:
+          type: integer
+          enum:
+          - 201
+          description: HTTP 상태코드와 동일
+        message:
+          type: string
+          description: 처리 결과 메시지
+        result:
+          $ref: '#/components/schemas/Comment'
+    delete_api_comments_idResponse:
+      type: object
+      additionalProperties: false
+      required:
+      - status
+      - message
+      - result
+      properties:
+        status:
+          type: integer
+          enum:
+          - 200
+          description: HTTP 상태코드와 동일
+        message:
+          type: string
+          description: 처리 결과 메시지
+        result:
+          type: object
+          nullable: true
+          enum:
+          - null
+    post_api_uploads_imagesResponse:
+      type: object
+      additionalProperties: false
+      required:
+      - status
+      - message
+      - result
+      properties:
+        status:
+          type: integer
+          enum:
+          - 201
+          description: HTTP 상태코드와 동일
+        message:
+          type: string
+          description: 처리 결과 메시지
+        result:
+          $ref: '#/components/schemas/Image'
+    post_api_chat_messagesResponse:
+      type: object
+      additionalProperties: false
+      required:
+      - status
+      - message
+      - result
+      properties:
+        status:
+          type: integer
+          enum:
+          - 200
+          description: HTTP 상태코드와 동일
+        message:
+          type: string
+          description: 처리 결과 메시지
+        result:
+          $ref: '#/components/schemas/ChatAnswer'
+x-open-decisions:
+- item: 지도 월세 기준
+  resolved: adjusted_1000(보증금 1000만원 환산). 기간 2023-09~2026-08, 유형 단독/다가구·연립다세대·오피스텔,
+    전용면적 ≤33㎡, null 환산 제외·음수 포함. RPC get_housing_district_medians.
+- item: 지도 좌표·출처·갱신시각
+  pending: 프로젝트에 검증된 구군 중심좌표·source_name·updated_at 없음. 응답은 null. 확정 후 채움.
+- item: 지역 코드
+  pending: 법정동/행정동 및 코드 체계 문서화. 지도 API는 거래 테이블 sggCd/sggNm(기장군 포함) 사용.
+- item: 컬처/즐길 거리
+  pending: 장소·행사 등 대상과 실제 데이터 미제공. 지도 내 즐길 거리 포함, API 필드를 아직 확정하지 않음.
+- item: 회원
+  pending: Supabase Auth 사용 확정. 모든 회원 기능 이번 구현 포함. 이메일 확인/redirect URL/프로필 초기화 설정은
+    연결 단계에서 결정.
+- item: DB 매핑
+  pending: 현재 ERD/실제 데이터와 아직 대조하지 않음. API 응답 필드와 DB 컬럼은 동일할 필요 없음.
+- item: RAG
+  pending: 검색 자료, FAQ 문구, 인증 정책 미확정. 실행용 paths에서 제외. 확정 후 security와 401 응답을 결정하여 추가.
+x-removed-endpoints:
+- '/api/v1/comparisons/preview: 공개 계산으로 통합'
+- '/api/v1/saved-comparisons 및 하위: DB 저장 요구 없음'
+- '/api/v1/policies/{id}: 외부 URL 이동으로 대체'
+- '/api/v1/comparisons/rent-500: 독립 환산 UI 요구 없음. 지도 환산 여부 확정 후 데이터 처리 로직에 적용'
+- 'PATCH /api/v1/posts/{id}: 글 수정 요구 없음'
+x-auth-flow:
+  provider: Supabase Auth
+  frontend: 프론트 회원가입/로그인 UI에서 Supabase Auth SDK 호출. 세션 유지/토큰 갱신/로그아웃은 Auth SDK 담당.
+    별도 Flask /auth/login 또는 /auth/register 없음.
+  flask: 회원 전용 요청의 access token 검증 후 sub를 사용한다. user_id/author_id를 클라이언트 입력으로 신뢰하지
+    않는다.
+  authorization: 즐겨찾기는 본인 계정, 글/댓글 삭제는 작성자, 사진 연결은 업로드 소유자 확인. 서버 privileged DB 접속
+    시에도 소유권 검사는 필수.
+  database: profiles.id는 auth.users.id 참조. favorites는 (user_id,policy_id) 유일 제약. 게시글/댓글/업로드에
+    소유자 FK. 브라우저가 직접 접근하는 DB/Storage에는 사용자별 접근 정책 적용.
+  secrets: 서버 전용 비밀키는 브라우저에 노출하지 않는다.
+  ui: 조회와 계산은 공개. 비회원이 즐겨찾기/작성/업로드를 누르면 로그인 UI로 안내. 로그인 후 새 토큰으로 정책 목록 재조회.
+  remaining_setup: 이메일 확인 사용 여부, redirect URL, 프로필 초기 닉네임 규칙은 Auth 설정 단계에서 결정.
+x-pending-apis:
+- path: /api/v1/chat/messages
+  method: post
+  operation:
+    tags:
+    - 챗봇
+    summary: 챗봇 · RAG 질문
+    description: RAG 질문/응답 후보 명세. 인증 정책과 자료 범위 미확정. 공개 또는 회원 전용으로 추정하지 않는다. 확정 전 라우트를
+      등록하지 않는다. FAQ 문구 미정. 단일 질의 및 대화 미저장은 설계안. 답변 근거 부족 시 insufficient_evidence와
+      sources=[] 반환.
+    operationId: post_api_chat_messages
+    x-mvp-phase: 1
+    x-implementation-status: blocked
+    responses:
+      '200':
+        description: 성공
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/post_api_chat_messagesResponse'
+            example:
+              status: 200
+              message: RAG 질문에 성공했습니다.
+              result:
+                status: insufficient_evidence
+                answer: 현재 확인 가능한 자료에서 답변 근거를 찾지 못했습니다.
+                sources: []
+      '400':
+        description: 질문은 앞뒤 공백 제거 후 1~2000자여야 합니다.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Error'
+            example:
+              status: 400
+              message: 질문은 앞뒤 공백 제거 후 1~2000자여야 합니다.
+              result: null
+      '429':
+        description: 요청 제한 초과
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Error'
+            example:
+              status: 429
+              message: 요청이 많습니다. 잠시 후 다시 시도해주세요.
+              result: null
+      '503':
+        description: RAG 검색 또는 답변 서비스가 준비되지 않았습니다.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Error'
+            example:
+              status: 503
+              message: RAG 검색 또는 답변 서비스가 준비되지 않았습니다.
+              result: null
+      '500':
+        description: 서버 내부 오류가 발생했습니다.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Error'
+            example:
+              status: 500
+              message: 서버 내부 오류가 발생했습니다.
+              result: null
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ChatInput'
+    x-contract-status: proposed-pending-corpus-and-access
+    x-api-id: CHAT-001
+    x-auth-status: undecided

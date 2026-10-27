@@ -1,0 +1,15 @@
+$kind: http-request
+description: 비회원 가능. 제목 또는 내용 부분일치(OR), 공백 제거, 영문 대소문자 무시. created_at 내림차순,id 내림차순. 삭제글 제외. 이번 단계에서 글 등록이 없으면 빈 목록도 정상. 토큰 생략 시 공개 조회 및 is_author=false. 유효 토큰이면 각 항목의 작성자와 대조해 is_author 반환. 잘못된 토큰은 401.
+url: "{{baseUrl}}/api/v1/posts?page=1&page_size=20&q=string"
+method: GET
+headers:
+  Accept: application/json
+queryParams:
+  page: "1"
+  page_size: "20"
+  q: string
+auth:
+  type: noauth
+settings: {}
+examples: ./.resources/커뮤니티 · 공개 목록 검색.resources/examples
+order: 1000

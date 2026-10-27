@@ -1,0 +1,33 @@
+$kind: http-example
+name: 정책이 없거나 비노출 상태입니다.
+request:
+  url: "{{baseUrl}}/api/v1/policies/:id/favorite"
+  method: DELETE
+  headers:
+    - key: Authorization
+      value: Bearer <token>
+      description: "Added as a part of security scheme: bearer"
+    - key: Accept
+      value: application/json
+  pathVariables:
+    - key: id
+      value: 2423719b-de04-82cd-98f3-2dc6bb995fd6
+      disabled: false
+      description: "(Required) "
+  body:
+    type: text
+    content: ""
+response:
+  statusCode: 404
+  statusText: Not Found
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "status": 404,
+        "message": "정책이 없거나 비노출 상태입니다.",
+        "result": null
+      }
+order: 4000

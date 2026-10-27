@@ -1,0 +1,18 @@
+$kind: http-request
+description: 댓글 작성자만 삭제.
+url: "{{baseUrl}}/api/v1/comments/:id"
+method: DELETE
+headers:
+  Accept: application/json
+pathVariables:
+  - key: id
+    value: 2423719b-de04-82cd-98f3-2dc6bb995fd6
+    disabled: false
+    description: "(Required) "
+auth:
+  type: bearer
+  credentials:
+    token: "{{bearerToken}}"
+settings: {}
+examples: ./.resources/커뮤니티 · 댓글 삭제.resources/examples
+order: 8000

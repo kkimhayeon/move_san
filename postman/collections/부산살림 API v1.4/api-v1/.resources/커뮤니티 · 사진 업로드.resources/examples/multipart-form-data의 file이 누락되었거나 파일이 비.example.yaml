@@ -1,0 +1,32 @@
+$kind: http-example
+name: multipart/form-data의 file이 누락되었거나 파일이 비어 있거나 손상되었습니다.
+request:
+  url: "{{baseUrl}}/api/v1/uploads/images"
+  method: POST
+  headers:
+    - key: Authorization
+      value: Bearer <token>
+      description: "Added as a part of security scheme: bearer"
+    - key: Accept
+      value: application/json
+  body:
+    type: formdata
+    content:
+      - type: file
+        key: file
+        src: ""
+        description: "(Required) "
+response:
+  statusCode: 400
+  statusText: Bad Request
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "status": 400,
+        "message": "multipart/form-data의 file이 누락되었거나 파일이 비어 있거나 손상되었습니다.",
+        "result": null
+      }
+order: 2000

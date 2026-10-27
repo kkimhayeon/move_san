@@ -1,0 +1,28 @@
+$kind: http-example
+name: 페이지 범위 또는 검색어 길이가 올바르지 않습니다.
+request:
+  url: "{{baseUrl}}/api/v1/posts?page=1&page_size=20&q=string"
+  method: GET
+  headers:
+    Accept: application/json
+  queryParams:
+    page: "1"
+    page_size: "20"
+    q: string
+  body:
+    type: text
+    content: ""
+response:
+  statusCode: 400
+  statusText: Bad Request
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "status": 400,
+        "message": "페이지 범위 또는 검색어 길이가 올바르지 않습니다.",
+        "result": null
+      }
+order: 2000

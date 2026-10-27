@@ -1,0 +1,36 @@
+$kind: http-example
+name: 게시글 ID가 올바르지 않거나 댓글이 공백 제거 후 1~1000자가 아닙니다.
+request:
+  url: "{{baseUrl}}/api/v1/posts/:id/comments"
+  method: POST
+  headers:
+    - key: Authorization
+      value: Bearer <token>
+      description: "Added as a part of security scheme: bearer"
+    - key: Accept
+      value: application/json
+  pathVariables:
+    - key: id
+      value: 2423719b-de04-82cd-98f3-2dc6bb995fd6
+      disabled: false
+      description: "(Required) "
+  body:
+    type: json
+    content: |-
+      {
+        "content": "string"
+      }
+response:
+  statusCode: 400
+  statusText: Bad Request
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "status": 400,
+        "message": "게시글 ID가 올바르지 않거나 댓글이 공백 제거 후 1~1000자가 아닙니다.",
+        "result": null
+      }
+order: 2000

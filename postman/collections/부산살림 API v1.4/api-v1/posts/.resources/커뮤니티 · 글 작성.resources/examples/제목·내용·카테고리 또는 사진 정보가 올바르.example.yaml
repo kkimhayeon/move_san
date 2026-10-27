@@ -1,0 +1,37 @@
+$kind: http-example
+name: 제목·내용·카테고리 또는 사진 정보가 올바르지 않습니다. 없는 카테고리, 없는 사진, 타인 사진, 이미 연결한 사진은 허용하지 않습니다.
+request:
+  url: "{{baseUrl}}/api/v1/posts"
+  method: POST
+  headers:
+    - key: Authorization
+      value: Bearer <token>
+      description: "Added as a part of security scheme: bearer"
+    - key: Accept
+      value: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "title": "string",
+        "content": "string",
+        "category_code": "string",
+        "image_ids": [
+          "134e3988-c66f-cdc1-8439-8be4a5a51535",
+          "48e70e34-66ac-bcde-549b-a24d0344ce8c"
+        ]
+      }
+response:
+  statusCode: 400
+  statusText: Bad Request
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "status": 400,
+        "message": "제목·내용·카테고리 또는 사진 정보가 올바르지 않습니다. 없는 카테고리, 없는 사진, 타인 사진, 이미 연결한 사진은 허용하지 않습니다.",
+        "result": null
+      }
+order: 2000

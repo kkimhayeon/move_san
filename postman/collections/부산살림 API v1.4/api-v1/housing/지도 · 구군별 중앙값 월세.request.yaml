@@ -1,0 +1,9 @@
+$kind: http-request
+description: 부산 16개 구군(기장군 포함). DB RPC로 보증금 1000만원 환산 월세 중앙값을 집계한다. 기간 2023-09~2026-08, 주택유형 단독/다가구·연립다세대·오피스텔, 전용면적 0 초과 33㎡ 이하. 이름 오름차순, 동률 시 region_code 오름차순. median_rent는 소수 최대 4자리 API 원값. 집계 행이 없으면 503.
+url: "{{baseUrl}}/api/v1/housing/districts"
+method: GET
+headers:
+  Accept: application/json
+settings: {}
+examples: ./.resources/지도 · 구군별 중앙값 월세.resources/examples
+order: 1000

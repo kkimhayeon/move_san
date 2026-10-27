@@ -1,0 +1,26 @@
+$kind: http-example
+name: parent_code에 해당하는 부산 지역이 없습니다.
+request:
+  url: "{{baseUrl}}/api/v1/regions?parent_code=string"
+  method: GET
+  headers:
+    Accept: application/json
+  queryParams:
+    parent_code: string
+  body:
+    type: text
+    content: ""
+response:
+  statusCode: 404
+  statusText: Not Found
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "status": 404,
+        "message": "parent_code에 해당하는 부산 지역이 없습니다.",
+        "result": null
+      }
+order: 3000

@@ -1,0 +1,9 @@
+$kind: http-request
+description: 노출 정책의 카테고리 목록, 이름 오름차순. 전체 버튼은 프론트에서 추가. 코드와 데이터 매핑은 수집 시 관리.
+url: "{{baseUrl}}/api/v1/policies/categories"
+method: GET
+headers:
+  Accept: application/json
+settings: {}
+examples: ./.resources/정책 · 카테고리 조회.resources/examples
+order: 2000

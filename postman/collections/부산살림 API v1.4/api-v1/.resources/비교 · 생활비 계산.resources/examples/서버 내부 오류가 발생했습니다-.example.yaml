@@ -1,0 +1,31 @@
+$kind: http-example
+name: 서버 내부 오류가 발생했습니다.
+request:
+  url: "{{baseUrl}}/api/v1/comparisons"
+  method: POST
+  headers:
+    Accept: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "seoul_pay": 300,
+        "busan_pay": 250,
+        "seoul_rent": 80,
+        "busan_rent": 50,
+        "living": 100
+      }
+response:
+  statusCode: 500
+  statusText: Internal Server Error
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "status": 500,
+        "message": "서버 내부 오류가 발생했습니다.",
+        "result": null
+      }
+order: 3000

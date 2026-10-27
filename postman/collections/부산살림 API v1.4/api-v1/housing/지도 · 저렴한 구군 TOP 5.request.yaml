@@ -1,0 +1,11 @@
+$kind: http-request
+description: districts와 동일 RPC·집계 기준. median_rent null 제외 후 숫자 오름차순, 동률 region_code 오름차순, 이후 limit 적용. limit 생략 시 5. 빈 값·비정수·소수·범위 밖은 400.
+url: "{{baseUrl}}/api/v1/housing/rankings?limit=5"
+method: GET
+headers:
+  Accept: application/json
+queryParams:
+  limit: "5"
+settings: {}
+examples: ./.resources/지도 · 저렴한 구군 TOP 5.resources/examples
+order: 2000

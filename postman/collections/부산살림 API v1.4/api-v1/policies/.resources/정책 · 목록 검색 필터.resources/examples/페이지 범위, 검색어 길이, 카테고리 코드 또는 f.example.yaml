@@ -1,0 +1,30 @@
+$kind: http-example
+name: 페이지 범위, 검색어 길이, 카테고리 코드 또는 favorites_only 값이 올바르지 않습니다.
+request:
+  url: "{{baseUrl}}/api/v1/policies?page=1&page_size=20&category=string&q=string&favorites_only=false"
+  method: GET
+  headers:
+    Accept: application/json
+  queryParams:
+    page: "1"
+    page_size: "20"
+    category: string
+    q: string
+    favorites_only: "false"
+  body:
+    type: text
+    content: ""
+response:
+  statusCode: 400
+  statusText: Bad Request
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "status": 400,
+        "message": "페이지 범위, 검색어 길이, 카테고리 코드 또는 favorites_only 값이 올바르지 않습니다.",
+        "result": null
+      }
+order: 2000

@@ -1,0 +1,83 @@
+$kind: http-example
+request:
+  url: "{{baseUrl}}/api/v1/housing/rankings?limit=5"
+  method: GET
+  headers:
+    Accept: application/json
+  queryParams:
+    limit: "5"
+  body:
+    type: text
+    content: ""
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "status": 200,
+        "message": "저렴한 구군 TOP 5에 성공했습니다.",
+        "result": {
+          "metadata": {
+            "rent_basis": "adjusted_1000",
+            "period_start": "2023-09-01",
+            "period_end": "2026-08-31",
+            "property_types": [
+              "단독/다가구",
+              "연립다세대",
+              "오피스텔"
+            ],
+            "max_area_m2": 33,
+            "target_deposit": 1000,
+            "source_name": null,
+            "updated_at": null,
+            "unit": "만원"
+          },
+          "items": [
+            {
+              "region_code": "26410",
+              "name": "금정구",
+              "center_latitude": null,
+              "center_longitude": null,
+              "median_rent": 30,
+              "sample_count": 7943
+            },
+            {
+              "region_code": "26200",
+              "name": "영도구",
+              "center_latitude": null,
+              "center_longitude": null,
+              "median_rent": 30.625,
+              "sample_count": 1181
+            },
+            {
+              "region_code": "26710",
+              "name": "기장군",
+              "center_latitude": null,
+              "center_longitude": null,
+              "median_rent": 33.4125,
+              "sample_count": 2405
+            },
+            {
+              "region_code": "26380",
+              "name": "사하구",
+              "center_latitude": null,
+              "center_longitude": null,
+              "median_rent": 35,
+              "sample_count": 5198
+            },
+            {
+              "region_code": "26320",
+              "name": "북구",
+              "center_latitude": null,
+              "center_longitude": null,
+              "median_rent": 35.3917,
+              "sample_count": 2339
+            }
+          ]
+        }
+      }
+order: 1000

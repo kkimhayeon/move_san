@@ -1,0 +1,16 @@
+$kind: http-request
+description: " 토큰 생략 시 공개 조회 및 is_author=false. 유효 토큰이면 각 항목의 작성자와 대조해 is_author 반환. 잘못된 토큰은 401."
+url: "{{baseUrl}}/api/v1/posts/:id"
+method: GET
+headers:
+  Accept: application/json
+pathVariables:
+  - key: id
+    value: 2423719b-de04-82cd-98f3-2dc6bb995fd6
+    disabled: false
+    description: "(Required) "
+auth:
+  type: noauth
+settings: {}
+examples: ./.resources/커뮤니티 · 공개 글 상세.resources/examples
+order: 1000

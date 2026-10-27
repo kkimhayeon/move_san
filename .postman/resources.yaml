@@ -1,0 +1,7 @@
+# Use this workspace to collaborate
+workspace:
+  id: 8ea51b26-b4e1-4d88-86e9-7caeb1c3f647
+
+localResources:
+  specs:
+    - ../busan_api_spec_v1.4.yaml

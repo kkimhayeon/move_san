@@ -1,0 +1,9 @@
+$kind: http-request
+description: 카테고리 실제 항목은 추후 확정; 목록 표시명과 작성용 코드를 함께 제공.
+url: "{{baseUrl}}/api/v1/posts/categories"
+method: GET
+headers:
+  Accept: application/json
+settings: {}
+examples: ./.resources/커뮤니티 · 카테고리 조회.resources/examples
+order: 3000

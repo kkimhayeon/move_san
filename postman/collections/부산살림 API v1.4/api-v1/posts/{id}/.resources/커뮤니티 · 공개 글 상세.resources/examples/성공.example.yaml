@@ -1,0 +1,45 @@
+$kind: http-example
+request:
+  url: "{{baseUrl}}/api/v1/posts/:id"
+  method: GET
+  headers:
+    Accept: application/json
+  pathVariables:
+    - key: id
+      value: 2423719b-de04-82cd-98f3-2dc6bb995fd6
+      disabled: false
+      description: "(Required) "
+  body:
+    type: text
+    content: ""
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "status": 200,
+        "message": "공개 글 상세에 성공했습니다.",
+        "result": {
+          "id": "11111111-1111-4111-8111-111111111111",
+          "title": "부산 생활에 대해 궁금해요",
+          "content": "부산 생활 정보를 공유해주세요.",
+          "author": {
+            "nickname": "부산살림사용자"
+          },
+          "created_at": "2026-10-26T07:00:00Z",
+          "updated_at": "2026-10-26T07:00:00Z",
+          "category_code": "free",
+          "images": [
+            {
+              "id": "11111111-1111-4111-8111-111111111111",
+              "url": "https://example.com/resource"
+            }
+          ],
+          "is_author": false
+        }
+      }
+order: 1000

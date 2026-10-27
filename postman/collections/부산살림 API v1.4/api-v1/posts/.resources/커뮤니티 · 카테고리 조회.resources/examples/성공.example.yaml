@@ -1,0 +1,30 @@
+$kind: http-example
+request:
+  url: "{{baseUrl}}/api/v1/posts/categories"
+  method: GET
+  headers:
+    Accept: application/json
+  body:
+    type: text
+    content: ""
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "status": 200,
+        "message": "카테고리 조회에 성공했습니다.",
+        "result": {
+          "items": [
+            {
+              "code": "free",
+              "name": "자유게시판"
+            }
+          ]
+        }
+      }
+order: 1000

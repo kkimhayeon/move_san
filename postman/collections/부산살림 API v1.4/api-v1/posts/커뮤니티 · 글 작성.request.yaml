@@ -1,0 +1,26 @@
+$kind: http-request
+description: ""
+url: "{{baseUrl}}/api/v1/posts"
+method: POST
+headers:
+  Content-Type: application/json
+  Accept: application/json
+body:
+  type: json
+  content: |-
+    {
+      "title": "string",
+      "content": "string",
+      "category_code": "string",
+      "image_ids": [
+        "134e3988-c66f-cdc1-8439-8be4a5a51535",
+        "48e70e34-66ac-bcde-549b-a24d0344ce8c"
+      ]
+    }
+auth:
+  type: bearer
+  credentials:
+    token: "{{bearerToken}}"
+settings: {}
+examples: ./.resources/커뮤니티 · 글 작성.resources/examples
+order: 2000

@@ -1,0 +1,46 @@
+$kind: http-example
+request:
+  url: "{{baseUrl}}/api/v1/policies?page=1&page_size=20&category=string&q=string&favorites_only=false"
+  method: GET
+  headers:
+    Accept: application/json
+  queryParams:
+    page: "1"
+    page_size: "20"
+    category: string
+    q: string
+    favorites_only: "false"
+  body:
+    type: text
+    content: ""
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "status": 200,
+        "message": "목록 검색 필터에 성공했습니다.",
+        "result": {
+          "items": [
+            {
+              "id": "11111111-1111-4111-8111-111111111111",
+              "policy_name": "예시 청년 지원 정책",
+              "region_codes": [
+                "EXAMPLE_DISTRICT"
+              ],
+              "support_summary": "지원 내용 예시",
+              "application_url": "https://example.com/policy",
+              "is_favorite": false,
+              "category_code": "housing"
+            }
+          ],
+          "page": 1,
+          "page_size": 20,
+          "total": 1
+        }
+      }
+order: 1000

@@ -1,0 +1,28 @@
+$kind: http-example
+name: 서버 내부 오류가 발생했습니다.
+request:
+  url: "{{baseUrl}}/api/v1/posts?page=1&page_size=20&q=string"
+  method: GET
+  headers:
+    Accept: application/json
+  queryParams:
+    page: "1"
+    page_size: "20"
+    q: string
+  body:
+    type: text
+    content: ""
+response:
+  statusCode: 500
+  statusText: Internal Server Error
+  headers:
+    Content-Type: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "status": 500,
+        "message": "서버 내부 오류가 발생했습니다.",
+        "result": null
+      }
+order: 4000
