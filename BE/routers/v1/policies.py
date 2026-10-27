@@ -21,7 +21,7 @@ def get_policy_categories():
     }), 501
 
 
-@policies_bp.post("/policies/<policy_id>/favorite")
+@policies_bp.put("/policies/<policy_id>/favorite")
 def add_favorite(policy_id: str):
     return jsonify({
         "status": 501,
