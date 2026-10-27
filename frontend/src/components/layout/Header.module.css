@@ -23,3 +23,9 @@
   .navItem { padding: 12px 6px; font-size: 14px; }
   .navItem.active::after { left: 6px; right: 6px; }
 }
+
+.userLabel { font-size: 13px; color: var(--sub); }
+.logoutBtn { border: 1px solid var(--brand-line); border-radius: 999px; padding: 8px 16px; background: #fff; color: var(--brand); font-size: 14px; font-weight: 600; cursor: pointer; }
+.logoutBtn:hover { background: var(--brand-soft); }
+.logoutBtn:disabled { opacity: 0.5; cursor: wait; }
+.logoutError { position: absolute; right: 16px; top: 100%; max-width: 280px; padding: 10px 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--card); color: var(--bad); box-shadow: var(--shadow); font-size: 13px; }

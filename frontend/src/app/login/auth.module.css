@@ -1,2 +1,207 @@
-.auth { max-width: 420px; margin: 0 auto; }
-.auth input { width: 100%; min-height: 48px; padding: 0 14px; border-radius: 12px; border: 1px solid #d5dde8; font: inherit; }
+
+/* ========================================
+   페이지 레이아웃
+======================================== */
+
+.page {
+  padding-top: 64px;
+  padding-bottom: 80px;
+}
+
+.auth {
+  max-width: 440px;
+  margin: 0 auto;
+  padding: 36px;
+
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.auth > :global(.tag) {
+  align-self: flex-start;
+}
+
+
+/* ========================================
+   제목 및 설명
+======================================== */
+
+.title {
+  font-size: 28px;
+}
+
+.description {
+  margin: -8px 0 4px;
+  color: var(--sub);
+  line-height: 1.7;
+}
+
+
+/* ========================================
+   입력 폼
+======================================== */
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.field input {
+  width: 100%;
+  min-height: 50px;
+  padding: 0 14px;
+
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: var(--card);
+  color: var(--ink);
+
+  font: inherit;
+  font-weight: 400;
+}
+
+.field input::placeholder {
+  color: var(--sub);
+}
+
+.field input:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+
+.field input:disabled {
+  background: var(--bg);
+}
+
+
+/* ========================================
+   비밀번호 표시 / 숨기기
+======================================== */
+
+.passwordWrapper {
+  position: relative;
+  width: 100%;
+}
+
+.passwordWrapper input {
+  width: 100%;
+  padding-right: 70px;
+}
+
+.passwordToggle {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+
+  border: none;
+  background: transparent;
+  cursor: pointer;
+
+  font-size: 13px;
+  color: #666;
+}
+
+.passwordToggle:hover {
+  color: #222;
+}
+
+.passwordToggle:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.passwordToggle:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+
+/* ========================================
+   로그인 / 회원가입 전환 링크
+======================================== */
+
+.authSwitch {
+  margin: 0;
+  text-align: center;
+  font-size: 14px;
+  color: var(--sub);
+}
+
+.authSwitchLink {
+  margin-left: 6px;
+  color: var(--brand);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.authSwitchLink:hover {
+  text-decoration: underline;
+}
+
+.authSwitchLink:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+
+/* ========================================
+   안내 및 오류 메시지
+======================================== */
+
+.error {
+  margin: 0;
+  color: var(--bad);
+  font-size: 13px;
+}
+
+.note {
+  margin: 0;
+  color: var(--sub);
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.caption {
+  margin: 0;
+  border-top: 1px solid var(--line);
+  padding-top: 18px;
+
+  color: var(--sub);
+  font-size: 12px;
+  text-align: center;
+}
+
+
+/* ========================================
+   반응형 - 모바일
+======================================== */
+
+@media (max-width: 720px) {
+  .page {
+    padding-top: 32px;
+    padding-bottom: 48px;
+  }
+
+  .auth {
+    padding: 26px 22px;
+    gap: 18px;
+  }
+
+  .title {
+    font-size: 25px;
+  }
+}

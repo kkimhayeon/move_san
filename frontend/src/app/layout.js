@@ -1,6 +1,7 @@
 import './globals.css';
 import { ComparisonHydration } from '@/stores/comparison';
 import Header from '@/components/layout/Header';
+import { AuthProvider } from '@/components/layout/AuthProvider';
 import Footer from '@/components/layout/Footer';
 import AiChat from '@/components/layout/AiChat';
 import { SITE } from '@/constants/seo';
@@ -29,11 +30,13 @@ export default function RootLayout({ children }) {
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
       </head>
       <body>
+        <AuthProvider>
         <ComparisonHydration />
         <Header />
         <main className="main">{children}</main>
         <Footer />
         <AiChat />
+        </AuthProvider>
       </body>
     </html>
   );

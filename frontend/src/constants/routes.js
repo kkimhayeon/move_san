@@ -6,6 +6,7 @@ export const ROUTES = {
   culture: '/culture',
   community: '/community',
   login: '/login',
+  signup: '/signup',
   rentTest: '/rent-test',
 };
 
@@ -26,4 +27,9 @@ export const SITEMAP_PATHS = [
   ROUTES.culture,
 ];
 
-export const NOINDEX_PATHS = [ROUTES.result, ROUTES.login, ROUTES.rentTest];
+export const NOINDEX_PATHS = [
+  ROUTES.result, 
+  ROUTES.login, 
+  ROUTES.signup,
+  ROUTES.rentTest
+];
