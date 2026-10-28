@@ -27,10 +27,16 @@ export async function signOut() {
 // 회원가입
 export async function signUp(email, password) {
   const supabase = createClient();
+  const normalizedEmail = email.trim();
 
   const { data, error } = await supabase.auth.signUp({
-    email,
+    email: normalizedEmail,
     password,
+    options: {
+      data: {
+        nickname: normalizedEmail.split('@')[0],
+      },
+    },
   });
 
   if (error) throw error;
