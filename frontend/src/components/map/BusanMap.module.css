@@ -1,9 +1,6 @@
 .layout { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(300px, 1fr); gap: 20px; align-items: start; }
 .toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
 .toolbar h2 { font-size: 20px; }
-.seg { display: inline-flex; padding: 4px; border-radius: 999px; background: #eef2f7; }
-.seg button { border: 0; background: transparent; padding: 7px 16px; border-radius: 999px; font-size: 13px; font-weight: 700; color: var(--sub); cursor: pointer; }
-.seg button.on { background: #fff; color: var(--brand); box-shadow: 0 2px 6px rgba(20, 50, 100, 0.12); }
 .select { min-height: 42px; padding: 0 12px; border-radius: 12px; border: 1px solid #d5dde8; background: #fff; font: inherit; font-weight: 600; color: var(--ink); }
 .wrap { position: relative; border-radius: 18px; background: linear-gradient(180deg, #f7fafe, #e6f0fb); padding: 8px; }
 .wrap svg { display: block; width: 100%; height: auto; }
