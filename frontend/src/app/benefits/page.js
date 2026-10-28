@@ -16,7 +16,7 @@ export default function BenefitsPage() {
         compact
         eyebrow="YOUTH BENEFITS"
         title={<>부산의 청년을 위한<br /><em>다양한 혜택</em>을 한눈에</>}
-        subtitle="주거, 금융, 교통, 교육, 취업 등 부산시와 기관의 청년 지원사업을 확인해 보세요."
+        subtitle="정책, 금융상품, 문화 및 모임 활동 등 부산시와 기관의 청년 지원사업을 확인해 보세요."
       />
       
       <div className="page">

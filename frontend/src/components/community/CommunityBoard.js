@@ -8,6 +8,7 @@ import { BOARD_CODES, BOARD_LABELS, POST_LIMITS } from '@/constants/community';
 import { ROUTES } from '@/constants/routes';
 import { useAuth } from '@/components/layout/AuthProvider';
 import { formatCommunityDate } from '@/utils/communityFormat';
+import { getUserErrorMessage, isAbortError } from '@/utils/errors';
 import styles from './CommunityBoard.module.css';
 
 function categoryName(code, categories) {
@@ -70,11 +71,11 @@ export default function CommunityBoard() {
         });
       })
       .catch((err) => {
-        if (cancelled) return;
+        if (cancelled || isAbortError(err)) return;
         setState((prev) => ({
           ...prev,
           loading: false,
-          error: err instanceof Error ? err.message : '목록을 불러오지 못했어요.',
+          error: getUserErrorMessage(err, '글 목록을 불러오지 못했어요.'),
           items: [],
           total: 0,
         }));

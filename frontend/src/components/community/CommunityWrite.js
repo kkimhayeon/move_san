@@ -7,6 +7,12 @@ import { createPost, fetchPostCategories, uploadImage } from '@/api/community';
 import { useAuth } from '@/components/layout/AuthProvider';
 import { BOARD_CODES, BOARD_LABELS, POST_LIMITS } from '@/constants/community';
 import { ROUTES } from '@/constants/routes';
+import {
+  createApiError,
+  getUserErrorMessage,
+  isAbortError,
+  isAuthRequiredError,
+} from '@/utils/errors';
 import styles from './CommunityWrite.module.css';
 
 function validateFile(file) {
@@ -36,6 +42,7 @@ export default function CommunityWrite() {
   const [pending, setPending] = useState(false);
   const [progress, setProgress] = useState('');
   const [error, setError] = useState('');
+  const [needsLogin, setNeedsLogin] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -126,6 +133,7 @@ export default function CommunityWrite() {
 
     setPending(true);
     setError('');
+    setNeedsLogin(false);
     setProgress('등록 준비 중…');
 
     try {
@@ -137,13 +145,22 @@ export default function CommunityWrite() {
           continue;
         }
         setProgress(`사진 업로드 중… (${i + 1}/${photos.length})`);
-        const uploaded = await uploadImage(photo.file);
-        const id = uploaded?.result?.id;
-        if (!id) throw new Error('사진 업로드 응답이 올바르지 않아요.');
-        imageIds.push(id);
-        setPhotos((prev) => prev.map((item) => (
-          item.key === photo.key ? { ...item, uploadedId: id } : item
-        )));
+        try {
+          const uploaded = await uploadImage(photo.file);
+          const id = uploaded?.result?.id;
+          if (!id) throw createApiError({ kind: 'parse' });
+          imageIds.push(id);
+          setPhotos((prev) => prev.map((item) => (
+            item.key === photo.key ? { ...item, uploadedId: id } : item
+          )));
+        } catch (uploadErr) {
+          if (isAbortError(uploadErr)) return;
+          setNeedsLogin(isAuthRequiredError(uploadErr));
+          setError(getUserErrorMessage(uploadErr, '사진 업로드에 실패했어요. 잠시 후 다시 시도해 주세요.'));
+          setProgress('');
+          setPending(false);
+          return;
+        }
       }
 
       setProgress('글 등록 중…');
@@ -156,10 +173,12 @@ export default function CommunityWrite() {
 
       const created = await createPost(body);
       const id = created?.result?.id;
-      if (!id) throw new Error('글 등록 응답이 올바르지 않아요.');
+      if (!id) throw createApiError({ kind: 'parse' });
       router.replace(ROUTES.communityPost(id));
     } catch (err) {
-      setError(err instanceof Error ? err.message : '글을 등록하지 못했어요.');
+      if (isAbortError(err)) return;
+      setNeedsLogin(isAuthRequiredError(err));
+      setError(getUserErrorMessage(err, '글 등록에 실패했어요. 잠시 후 다시 시도해 주세요.'));
       setProgress('');
       setPending(false);
     }
@@ -268,10 +287,19 @@ export default function CommunityWrite() {
       </div>
 
       {error && <p className="bad small" role="alert" style={{ margin: 0 }}>{error}</p>}
+      {needsLogin && (
+        <Link
+          className="btn btn-outline btn-sm"
+          href={`${ROUTES.login}?next=${encodeURIComponent(ROUTES.communityWrite)}`}
+          style={{ alignSelf: 'flex-start' }}
+        >
+          로그인하러 가기
+        </Link>
+      )}
       {progress && <p className="small muted" style={{ margin: 0 }}>{progress}</p>}
 
       <div className={styles.actions}>
-        <Link href={ROUTES.community} className="btn btn-outline" aria-disabled={pending}>취소</Link>
+        <Link href={ROUTES.community} className="btn btn-outline">취소</Link>
         <button type="submit" className="btn" disabled={pending}>
           {pending ? '등록 중…' : '등록하기'}
         </button>

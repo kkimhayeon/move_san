@@ -1,5 +1,12 @@
-.cats { margin-top: 36px; }
-.search { display: flex; align-items: center; gap: 8px; margin-top: 96px; margin-bottom: 0; }
+.cats { margin-top: 28px; flex-wrap: wrap; }
+.searchRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 96px;
+  flex-wrap: wrap;
+}
+.search { display: flex; align-items: center; gap: 8px; flex: 1; min-width: min(100%, 220px); margin: 0; }
 .search > svg { flex-shrink: 0; color: #888; }
 .search input { flex: 1; min-width: 0; border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; font: inherit; font-weight: 400; background: #fff; color: var(--ink); }
 
@@ -24,9 +31,6 @@
 }
 .top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .body { display: flex; flex-direction: column; gap: 8px; min-height: 0; flex: 1; }
-.titleRow { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
-.heart { flex: none; border: 0; background: transparent; padding: 0; margin-top: 1px; cursor: pointer; line-height: 0; color: #94a3b8; }
-.heart[aria-pressed='true'] { color: #e5484d; }
 .card h3 {
   margin: 0;
   flex: 1;
@@ -43,21 +47,34 @@
   color: var(--sub);
   font-size: 14px;
   line-height: 1.5;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
 }
-.card.open .desc { display: block; -webkit-line-clamp: unset; }
-.info { margin: 0; font-size: 13px; font-weight: 600; }
+.fields {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 4px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: #f6f8fb;
+}
+.field {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr);
+  gap: 8px;
+  font-size: 13px;
+  line-height: 1.45;
+}
+.field b { color: var(--ink); font-weight: 700; }
+.field span { min-width: 0; color: var(--sub); word-break: break-word; }
 .card :global(.btn-sm) { align-self: flex-start; margin-top: auto; }
-.detail { display: flex; flex-direction: column; gap: 4px; margin-top: 4px; padding: 12px 14px; border-radius: 12px; background: #f6f8fb; }
-.detail b { display: inline-block; width: 36px; color: var(--ink); }
 .thumb { flex: none; display: grid; place-items: center; border-radius: 14px; background: linear-gradient(135deg, #9cc8ff, #4f86e8); }
+.statusBox { padding: 18px; }
 
 @media (max-width: 720px) {
-  .grid { gap: 12px; }
+  .searchRow { margin-top: 48px; }
+  .grid { grid-template-columns: 1fr; gap: 12px; }
   .card { padding: 14px; border-radius: 16px; }
   .card h3 { font-size: 15px; }
-  .desc { font-size: 13px; -webkit-line-clamp: 2; }
+  .desc { font-size: 13px; }
+  .field { grid-template-columns: 64px minmax(0, 1fr); font-size: 12px; }
 }

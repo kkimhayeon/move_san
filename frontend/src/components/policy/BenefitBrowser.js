@@ -1,127 +1,243 @@
 'use client';
 
-// 청년 혜택 목록: 카테고리 칩 + 정책 이름·요약 키워드 검색
+// 청년 혜택 목록: /api/policies · /api/policies/categories 연동
 import { useEffect, useState } from 'react';
-import { BENEFITS, CATEGORIES, CAT_ICON } from '@/constants/benefits';
+import { fetchPolicies, fetchPolicyCategories, safeOfficialUrl } from '@/api/policies';
+import { CAT_ICON } from '@/constants/benefits';
+import { getUserErrorMessage, isAbortError } from '@/utils/errors';
 import styles from './BenefitBrowser.module.css';
 
-const FAVORITES_KEY = 'benefit-browser-favorites';
-
-function readFavoriteIds() {
-  try {
-    const raw = localStorage.getItem(FAVORITES_KEY);
-    const parsed = raw ? JSON.parse(raw) : [];
-    return Array.isArray(parsed) ? parsed.filter((id) => typeof id === 'string') : [];
-  } catch {
-    return [];
-  }
-}
+const ALL_TAB = '전체';
 
 export function Thumb({ cat, size = 120 }) {
   return (
     <span className={styles.thumb} style={{ width: size, height: size }} aria-hidden="true">
-      <svg width={size * 0.36} height={size * 0.36} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d={CAT_ICON[cat] || CAT_ICON['생활 지원']} /></svg>
+      <svg width={size * 0.36} height={size * 0.36} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+        <path d={CAT_ICON[cat] || CAT_ICON[ALL_TAB]} />
+      </svg>
     </span>
   );
 }
 
+function Field({ label, value }) {
+  if (!value) return null;
+  return (
+    <div className={styles.field}>
+      <b>{label}</b>
+      <span>{value}</span>
+    </div>
+  );
+}
+
 export default function BenefitBrowser() {
-  const [cat, setCat] = useState('전체');
-  const [keyword, setKeyword] = useState('');
-  const [open, setOpen] = useState('');
-  const [favoriteIds, setFavoriteIds] = useState([]);
-  const [favoritesReady, setFavoritesReady] = useState(false);
+  const [categories, setCategories] = useState([]);
+  const [categoriesLoading, setCategoriesLoading] = useState(true);
+  const [categoriesError, setCategoriesError] = useState(null);
+  const [categoriesReload, setCategoriesReload] = useState(0);
+
+  const [cat, setCat] = useState(ALL_TAB);
+  const [draftQ, setDraftQ] = useState('');
+  const [appliedQ, setAppliedQ] = useState('');
+  const [reloadToken, setReloadToken] = useState(0);
+  const [initialLoadDone, setInitialLoadDone] = useState(false);
+  const [listState, setListState] = useState({
+    loading: true,
+    error: null,
+    items: [],
+    total: 0,
+  });
 
   useEffect(() => {
-    setFavoriteIds(readFavoriteIds());
-    setFavoritesReady(true);
-  }, []);
+    const controller = new AbortController();
+    setCategoriesLoading(true);
+    setCategoriesError(null);
+
+    fetchPolicyCategories({ signal: controller.signal })
+      .then((items) => {
+        setCategories(items);
+        setCategoriesLoading(false);
+        setCategoriesError(null);
+      })
+      .catch((err) => {
+        if (isAbortError(err)) return;
+        setCategories([]);
+        setCategoriesLoading(false);
+        setCategoriesError(getUserErrorMessage(err, '카테고리를 불러오지 못했어요.'));
+      });
+
+    return () => controller.abort();
+  }, [categoriesReload]);
 
   useEffect(() => {
-    if (!favoritesReady) return;
-    localStorage.setItem(FAVORITES_KEY, JSON.stringify(favoriteIds));
-  }, [favoriteIds, favoritesReady]);
+    const controller = new AbortController();
+    setListState((prev) => ({ ...prev, loading: true, error: null }));
 
-  const toggleFavorite = (id) => {
-    setFavoriteIds((prev) => (prev.includes(id) ? prev.filter((item) => item !== id) : [id, ...prev]));
+    const category = cat === ALL_TAB ? undefined : cat;
+    const q = appliedQ.trim() || undefined;
+
+    fetchPolicies({ category, q, signal: controller.signal })
+      .then((result) => {
+        setListState({
+          loading: false,
+          error: null,
+          items: result.items,
+          total: result.total,
+        });
+        setInitialLoadDone(true);
+      })
+      .catch((err) => {
+        if (isAbortError(err)) return;
+        setListState({
+          loading: false,
+          error: getUserErrorMessage(err, '혜택 목록을 불러오지 못했어요.'),
+          items: [],
+          total: 0,
+        });
+        setInitialLoadDone(true);
+      });
+
+    return () => controller.abort();
+  }, [cat, appliedQ, reloadToken]);
+
+  const onSearch = (event) => {
+    event.preventDefault();
+    setAppliedQ(draftQ.trim());
   };
 
-  const q = keyword.trim().toLowerCase();
-  const list = BENEFITS.filter((b) => {
-    if (cat !== '전체' && b.cat !== cat) return false;
-    if (!q) return true;
-    return b.title.toLowerCase().includes(q) || b.desc.toLowerCase().includes(q);
-  }).sort((a, b) => Number(favoriteIds.includes(b.id)) - Number(favoriteIds.includes(a.id)));
+  const clearSearch = () => {
+    setDraftQ('');
+    setAppliedQ('');
+  };
+
+  const showInitialLoading = listState.loading && !initialLoadDone;
+  const showRefreshing = listState.loading && initialLoadDone;
+  const hasFilter = Boolean(appliedQ) || cat !== ALL_TAB;
+  const emptyMessage = hasFilter
+    ? '검색어나 카테고리에 맞는 지원사업이 없어요.'
+    : '등록된 지원사업이 없어요.';
 
   return (
     <>
-      <label className={styles.search}>
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-          <circle cx="11" cy="11" r="8" />
-          <path d="m21 21-4.35-4.35" />
-        </svg>
-        <input
-          type="search"
-          value={keyword}
-          onChange={(e) => setKeyword(e.target.value)}
-          placeholder="정책 이름 또는 요약에 포함된 단어"
-          aria-label="정책 이름 또는 요약으로 검색"
-        />
-      </label>
+      <form className={styles.searchRow} onSubmit={onSearch}>
+        <label className={styles.search}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <circle cx="11" cy="11" r="8" />
+            <path d="m21 21-4.35-4.35" />
+          </svg>
+          <input
+            type="search"
+            value={draftQ}
+            onChange={(e) => setDraftQ(e.target.value)}
+            placeholder="혜택 이름으로 검색"
+            aria-label="혜택 이름으로 검색"
+          />
+        </label>
+        <button type="submit" className="btn btn-outline" style={{ minHeight: 48 }}>검색</button>
+        {appliedQ ? (
+          <button type="button" className="btn-ghost" onClick={clearSearch}>초기화</button>
+        ) : null}
+      </form>
 
-      <div className={`chips filter-chips ${styles.cats}`}>
-        {['전체', ...CATEGORIES].map((c) => (
-          <button key={c} className={cat === c ? 'chip big on' : 'chip big'} onClick={() => setCat(c)}>{c}</button>
-        ))}
-      </div>
+      {categoriesError ? (
+        <div className={`card ${styles.statusBox} stack`}>
+          <p className="bad" role="alert" style={{ margin: 0 }}>{categoriesError}</p>
+          <button type="button" className="btn-ghost" onClick={() => setCategoriesReload((n) => n + 1)}>↻ 카테고리 다시 시도</button>
+        </div>
+      ) : (
+        <div className={`chips filter-chips ${styles.cats}`} role="tablist" aria-label="혜택 카테고리">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={cat === ALL_TAB}
+            className={cat === ALL_TAB ? 'chip big on' : 'chip big'}
+            onClick={() => setCat(ALL_TAB)}
+          >
+            {ALL_TAB}
+          </button>
+          {categoriesLoading && categories.length === 0 ? (
+            <span className="small muted">카테고리 불러오는 중…</span>
+          ) : null}
+          {categories.map((c) => (
+            <button
+              key={c}
+              type="button"
+              role="tab"
+              aria-selected={cat === c}
+              className={cat === c ? 'chip big on' : 'chip big'}
+              onClick={() => setCat(c)}
+            >
+              {c}
+            </button>
+          ))}
+        </div>
+      )}
 
       <div className="stack" style={{ gap: 14 }}>
-        <span className="small muted">총 {list.length}개의 지원사업이 있어요.</span>
-        {list.length === 0 && <div className="card muted">검색어나 카테고리에 맞는 지원사업이 없어요.</div>}
-        <div className={styles.grid}>
-          {list.map((b) => {
-            const isOpen = open === b.id;
-            return (
-              <article key={b.id} className={isOpen ? `${styles.card} ${styles.open}` : styles.card}>
-                <div className={styles.top}>
-                  <Thumb cat={b.cat} size={52} />
-                  <span className="tag">{b.cat}</span>
-                </div>
-                <div className={styles.body}>
-                  <div className={styles.titleRow}>
-                    <h3>{b.title}</h3>
-                    <button
-                      type="button"
-                      className={styles.heart}
-                      aria-pressed={favoriteIds.includes(b.id)}
-                      aria-label={favoriteIds.includes(b.id) ? `${b.title} 즐겨찾기 해제` : `${b.title} 즐겨찾기`}
-                      onClick={() => toggleFavorite(b.id)}
-                    >
-                      <svg width="22" height="22" viewBox="0 0 24 24" fill={favoriteIds.includes(b.id) ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                        <path d="M19.5 12.572 12 20l-7.5-7.428a5 5 0 1 1 7.5-6.566 5 5 0 1 1 7.5 6.572" />
-                      </svg>
-                    </button>
-                  </div>
-                  <p className={styles.desc}>{b.desc}</p>
-                  <p className={styles.info}>{b.info}</p>
-                  {isOpen && (
-                    <div className={`${styles.detail} small`}>
-                      <div><b>대상</b> {b.ages.join(', ')} · {b.housing.join(', ')}</div>
-                      <div><b>소득</b> {b.income.join(', ')}</div>
-                      <div><b>주관</b> {b.org}</div>
-                      <div><b>신청</b> [신청 방법·링크 입력 필요]</div>
-                      <a href="https://www.youthcenter.go.kr/" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--brand)', fontWeight: 700 }}>온통청년에서 찾아보기 ↗</a>
-                    </div>
-                  )}
-                </div>
-                <button className="btn btn-outline btn-sm" onClick={() => setOpen(isOpen ? '' : b.id)}>
-                  {isOpen ? '접기 ▲' : '자세히 보기 →'}
-                </button>
-              </article>
-            );
-          })}
-        </div>
-        <p className="small warn" style={{ margin: 0 }}>지원사업 카드는 화면 확인용 예시예요. 실제 조건은 혜택 담당이 정리한 데이터로 바뀌어요.</p>
+        {showInitialLoading && (
+          <div className={`card ${styles.statusBox} muted`}>혜택을 불러오는 중…</div>
+        )}
+
+        {showRefreshing && (
+          <div className={`card ${styles.statusBox} muted`}>혜택을 불러오는 중…</div>
+        )}
+
+        {!listState.loading && listState.error && (
+          <div className={`card ${styles.statusBox} stack`}>
+            <p className="bad" role="alert" style={{ margin: 0 }}>{listState.error}</p>
+            <button type="button" className="btn-ghost" onClick={() => setReloadToken((n) => n + 1)}>↻ 다시 시도</button>
+          </div>
+        )}
+
+        {!listState.loading && !listState.error && (
+          <>
+            <span className="small muted">총 {listState.total}개의 지원사업이 있어요.</span>
+            {listState.items.length === 0 ? (
+              <div className={`card ${styles.statusBox} muted`}>{emptyMessage}</div>
+            ) : (
+              <div className={styles.grid}>
+                {listState.items.map((b) => {
+                  const officialUrl = safeOfficialUrl(b.official_url);
+                  const hasFields = Boolean(
+                    b.benefit_description
+                    || b.period_description
+                    || b.eligibility_description
+                    || b.interest_rate_description,
+                  );
+                  return (
+                    <article key={b.policy_id} className={styles.card}>
+                      <div className={styles.top}>
+                        <Thumb cat={b.category} size={52} />
+                        <span className="tag">{b.category}</span>
+                      </div>
+                      <div className={styles.body}>
+                        <h3>{b.policy_name}</h3>
+                        {b.description ? <p className={styles.desc}>{b.description}</p> : null}
+                        {hasFields ? (
+                          <div className={styles.fields}>
+                            <Field label="지원 내용" value={b.benefit_description} />
+                            <Field label="지원 기간" value={b.period_description} />
+                            <Field label="지원 대상" value={b.eligibility_description} />
+                            <Field label="금리" value={b.interest_rate_description} />
+                          </div>
+                        ) : null}
+                      </div>
+                      {officialUrl ? (
+                        <a
+                          className="btn btn-outline btn-sm"
+                          href={officialUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          공식 사이트 이동 ↗
+                        </a>
+                      ) : null}
+                    </article>
+                  );
+                })}
+              </div>
+            )}
+          </>
+        )}
       </div>
     </>
   );

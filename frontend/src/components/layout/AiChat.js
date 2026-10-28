@@ -12,6 +12,7 @@ import { ROUTES } from '@/constants/routes';
 import { useComparisonInputs, useNumbers } from '@/stores/comparison';
 import { hasAnyCondition, useUserConditions } from '@/stores/userConditions';
 import { localReply, SUGGESTIONS } from '@/utils/chatbot';
+import { getUserErrorMessage, isAbortError } from '@/utils/errors';
 import UserConditionsForm from '@/components/chatbot/UserConditionsForm';
 import styles from './AiChat.module.css';
 
@@ -67,7 +68,9 @@ export default function AiChat() {
         : { ...localReply(question, { values, complete, conditions }), isMock: true };
       setMsgs((m) => [...m, { role: 'bot', ...reply }]);
     } catch (err) {
-      setError(err?.message || '답변을 받지 못했어요.');
+      if (!isAbortError(err)) {
+        setError(getUserErrorMessage(err, '답변을 받지 못했어요. 잠시 후 다시 시도해 주세요.'));
+      }
     } finally {
       setBusy(false);
     }

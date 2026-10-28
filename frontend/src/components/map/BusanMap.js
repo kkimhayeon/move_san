@@ -8,6 +8,7 @@ import { fetchHousingDistricts, fetchHousingRankings } from '@/api/housing';
 import { GU, MAP_HEIGHT, SPOTS, SPOT_TYPES } from '@/constants/busan';
 import { ROUTES } from '@/constants/routes';
 import { useComparisonInputs, useNumbers } from '@/stores/comparison';
+import { getUserErrorMessage, isAbortError } from '@/utils/errors';
 import { signed } from '@/utils/formatMoney';
 import styles from './BusanMap.module.css';
 
@@ -107,10 +108,10 @@ export default function BusanMap() {
         setDistricts({ loading: false, error: null, items, metadata });
       })
       .catch((err) => {
-        if (cancelled) return;
+        if (cancelled || isAbortError(err)) return;
         setDistricts({
           loading: false,
-          error: err instanceof Error ? err.message : '구군 데이터를 불러오지 못했어요.',
+          error: getUserErrorMessage(err, '월세 정보를 불러오지 못했어요.'),
           items: [],
           metadata: null,
         });
@@ -129,10 +130,10 @@ export default function BusanMap() {
         setRankings({ loading: false, error: null, items });
       })
       .catch((err) => {
-        if (cancelled) return;
+        if (cancelled || isAbortError(err)) return;
         setRankings({
           loading: false,
-          error: err instanceof Error ? err.message : '순위 데이터를 불러오지 못했어요.',
+          error: getUserErrorMessage(err, '월세 낮은 동네 순위를 불러오지 못했어요.'),
           items: [],
         });
       });

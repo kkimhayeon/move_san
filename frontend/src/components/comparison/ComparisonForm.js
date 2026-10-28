@@ -11,6 +11,7 @@ import {
   useNumbers,
 } from '@/stores/comparison';
 import { 물가비율, 부산물가절감률 } from '@/utils/calc';
+import { getUserErrorMessage, isAbortError } from '@/utils/errors';
 import { sanitizeMoney } from '@/utils/moneyInput';
 import { BUSAN_FIELDS, FieldIcon, SEOUL_FIELDS } from './fields';
 import styles from './ComparisonForm.module.css';
@@ -136,7 +137,9 @@ export default function ComparisonForm() {
       setResult(data.result);
       router.push(ROUTES.result);
     } catch (err) {
-      setError(err instanceof Error ? err.message : '계산에 실패했어요.');
+      if (!isAbortError(err)) {
+        setError(getUserErrorMessage(err, '생활비 계산에 실패했어요. 잠시 후 다시 시도해 주세요.'));
+      }
     } finally {
       setLoading(false);
     }

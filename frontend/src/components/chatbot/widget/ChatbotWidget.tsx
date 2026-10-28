@@ -12,6 +12,7 @@ import UserConditionsForm from "./UserConditionsForm";
 import { isChatApiConnected, sendChatMessage } from "@/lib/chatbot/api";
 import { hasAnyCondition, useUserConditions } from "@/lib/userConditions";
 import type { ChatMessage as ChatMessageType } from "@/types/chat";
+import { getUserErrorMessage, isAbortError } from "@/utils/errors";
 
 type Tab = "chat" | "conditions";
 
@@ -56,7 +57,9 @@ export default function ChatbotWidget() {
         { id: newId(), role: "assistant", content: reply.content, isMock: reply.isMock, createdAt: Date.now() },
       ]);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "답변을 받지 못했어요.");
+      if (!isAbortError(err)) {
+        setError(getUserErrorMessage(err, "답변을 받지 못했어요. 잠시 후 다시 시도해 주세요."));
+      }
     } finally {
       setLoading(false);
     }

@@ -1,6 +1,13 @@
 // GET {API_BASE}/api/v1/housing/districts · /api/v1/housing/rankings
-// 인증 불필요. 응답: { status, message, result: { metadata, items } }
 import { API_BASE } from './client';
+import {
+  apiErrorFromCatch,
+  apiErrorFromResponse,
+  createApiError,
+  isAbortError,
+  isApiError,
+  logApiError,
+} from '@/utils/errors';
 
 function normalizeItem(raw) {
   if (!raw || typeof raw !== 'object') return null;
@@ -27,26 +34,36 @@ function normalizeItem(raw) {
 
 async function fetchHousing(path) {
   if (!API_BASE) {
-    throw new Error('API 주소가 설정되지 않았어요. NEXT_PUBLIC_API_URL을 확인해 주세요.');
+    const err = createApiError({ kind: 'config' });
+    logApiError(`fetchHousing ${path}`, err);
+    throw err;
   }
 
   try {
-    const res = await fetch(`${API_BASE}${path}`, { cache: 'no-store' });
+    let res;
+    try {
+      res = await fetch(`${API_BASE}${path}`, { cache: 'no-store' });
+    } catch (cause) {
+      throw apiErrorFromCatch(cause);
+    }
 
     let data = null;
     try {
       data = await res.json();
     } catch {
-      throw new Error(`서버 응답을 읽을 수 없어요 (HTTP ${res.status}).`);
+      throw createApiError({
+        kind: res.ok ? 'parse' : 'http',
+        status: res.status,
+      });
     }
 
     if (!res.ok) {
-      throw new Error(data?.message || `서버 응답 오류 (HTTP ${res.status})`);
+      throw apiErrorFromResponse(res, data);
     }
 
     const result = data?.result;
     if (!result || typeof result !== 'object' || !Array.isArray(result.items)) {
-      throw new Error(data?.message || '응답 형식이 달라요 (result.items 배열이 없어요).');
+      throw createApiError({ kind: 'parse', status: res.status });
     }
 
     const items = result.items.map(normalizeItem).filter(Boolean);
@@ -55,10 +72,9 @@ async function fetchHousing(path) {
       items,
     };
   } catch (err) {
-    if (err instanceof TypeError) {
-      throw new Error('서버에 연결할 수 없어요. Flask 서버가 켜져 있는지, CORS 설정을 확인해 주세요.');
-    }
-    throw err instanceof Error ? err : new Error('알 수 없는 오류가 발생했어요.');
+    const apiErr = isApiError(err) ? err : apiErrorFromCatch(err);
+    if (!isAbortError(apiErr)) logApiError(`fetchHousing ${path}`, apiErr);
+    throw apiErr;
   }
 }
 

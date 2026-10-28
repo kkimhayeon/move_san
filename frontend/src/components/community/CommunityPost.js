@@ -15,6 +15,12 @@ import { useAuth } from '@/components/layout/AuthProvider';
 import { BOARD_LABELS, POST_LIMITS } from '@/constants/community';
 import { ROUTES } from '@/constants/routes';
 import { formatCommunityDate } from '@/utils/communityFormat';
+import {
+  getUserErrorMessage,
+  isAbortError,
+  isAuthRequiredError,
+  isNotFoundError,
+} from '@/utils/errors';
 import styles from './CommunityPost.module.css';
 
 export default function CommunityPost({ postId }) {
@@ -22,7 +28,7 @@ export default function CommunityPost({ postId }) {
   const { user, loading: authLoading } = useAuth();
   const [categoryNames, setCategoryNames] = useState({ ...BOARD_LABELS });
   const [post, setPost] = useState(null);
-  const [postState, setPostState] = useState({ loading: true, error: null });
+  const [postState, setPostState] = useState({ loading: true, error: null, notFound: false });
   const [comments, setComments] = useState([]);
   const [commentMeta, setCommentMeta] = useState({ page: 1, page_size: POST_LIMITS.commentPageSize, total: 0 });
   const [commentPage, setCommentPage] = useState(1);
@@ -32,7 +38,9 @@ export default function CommunityPost({ postId }) {
   const [deletingPost, setDeletingPost] = useState(false);
   const [deletingCommentId, setDeletingCommentId] = useState(null);
   const [formError, setFormError] = useState('');
+  const [needsLogin, setNeedsLogin] = useState(false);
   const [reloadComments, setReloadComments] = useState(0);
+  const [postReload, setPostReload] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -51,23 +59,24 @@ export default function CommunityPost({ postId }) {
 
   useEffect(() => {
     let cancelled = false;
-    setPostState({ loading: true, error: null });
+    setPostState({ loading: true, error: null, notFound: false });
     fetchPost(postId)
       .then((data) => {
         if (cancelled) return;
         setPost(data?.result || null);
-        setPostState({ loading: false, error: null });
+        setPostState({ loading: false, error: null, notFound: false });
       })
       .catch((err) => {
-        if (cancelled) return;
+        if (cancelled || isAbortError(err)) return;
         setPost(null);
         setPostState({
           loading: false,
-          error: err instanceof Error ? err.message : '글을 불러오지 못했어요.',
+          notFound: isNotFoundError(err),
+          error: getUserErrorMessage(err, '글 상세를 불러오지 못했어요.'),
         });
       });
     return () => { cancelled = true; };
-  }, [postId]);
+  }, [postId, postReload]);
 
   useEffect(() => {
     let cancelled = false;
@@ -85,11 +94,11 @@ export default function CommunityPost({ postId }) {
         setCommentState({ loading: false, error: null });
       })
       .catch((err) => {
-        if (cancelled) return;
+        if (cancelled || isAbortError(err)) return;
         setComments([]);
         setCommentState({
           loading: false,
-          error: err instanceof Error ? err.message : '댓글을 불러오지 못했어요.',
+          error: getUserErrorMessage(err, '댓글 목록을 불러오지 못했어요.'),
         });
       });
     return () => { cancelled = true; };
@@ -104,11 +113,15 @@ export default function CommunityPost({ postId }) {
     if (!post?.is_author || deletingPost) return;
     if (!window.confirm('이 글을 삭제할까요? 삭제하면 목록에서 사라져요.')) return;
     setDeletingPost(true);
+    setNeedsLogin(false);
     try {
       await deletePost(postId);
       router.replace(ROUTES.community);
     } catch (err) {
-      setFormError(err instanceof Error ? err.message : '글을 삭제하지 못했어요.');
+      if (!isAbortError(err)) {
+        setNeedsLogin(isAuthRequiredError(err));
+        setFormError(getUserErrorMessage(err, '글 삭제에 실패했어요. 잠시 후 다시 시도해 주세요.'));
+      }
       setDeletingPost(false);
     }
   };
@@ -131,13 +144,17 @@ export default function CommunityPost({ postId }) {
     }
     setSubmitting(true);
     setFormError('');
+    setNeedsLogin(false);
     try {
       await createComment(postId, { content });
       setDraft('');
       setCommentPage(1);
       setReloadComments((n) => n + 1);
     } catch (err) {
-      setFormError(err instanceof Error ? err.message : '댓글을 등록하지 못했어요.');
+      if (!isAbortError(err)) {
+        setNeedsLogin(isAuthRequiredError(err));
+        setFormError(getUserErrorMessage(err, '댓글 등록에 실패했어요. 잠시 후 다시 시도해 주세요.'));
+      }
     } finally {
       setSubmitting(false);
     }
@@ -148,11 +165,15 @@ export default function CommunityPost({ postId }) {
     if (!window.confirm('이 댓글을 삭제할까요?')) return;
     setDeletingCommentId(commentId);
     setFormError('');
+    setNeedsLogin(false);
     try {
       await deleteComment(commentId);
       setReloadComments((n) => n + 1);
     } catch (err) {
-      setFormError(err instanceof Error ? err.message : '댓글을 삭제하지 못했어요.');
+      if (!isAbortError(err)) {
+        setNeedsLogin(isAuthRequiredError(err));
+        setFormError(getUserErrorMessage(err, '댓글 삭제에 실패했어요. 잠시 후 다시 시도해 주세요.'));
+      }
     } finally {
       setDeletingCommentId(null);
     }
@@ -165,7 +186,16 @@ export default function CommunityPost({ postId }) {
   if (postState.error || !post) {
     return (
       <div className={`card stack ${styles.status}`}>
-        <p className="bad" role="alert" style={{ margin: 0 }}>{postState.error || '글을 찾을 수 없어요.'}</p>
+        <p className="bad" role="alert" style={{ margin: 0 }}>
+          {postState.notFound
+            ? '글을 찾을 수 없거나 삭제되었어요.'
+            : (postState.error || '글 상세를 불러오지 못했어요.')}
+        </p>
+        {!postState.notFound && (
+          <button type="button" className="btn-ghost" onClick={() => setPostReload((n) => n + 1)}>
+            ↻ 다시 시도
+          </button>
+        )}
         <Link href={ROUTES.community} className="btn">목록으로</Link>
       </div>
     );
@@ -214,7 +244,7 @@ export default function CommunityPost({ postId }) {
         {!commentState.loading && commentState.error && (
           <div className="stack">
             <p className="bad small" role="alert">{commentState.error}</p>
-            <button type="button" className="btn-ghost" onClick={() => setReloadComments((n) => n + 1)}>↻ 댓글 다시 시도</button>
+            <button type="button" className="btn-ghost" onClick={() => setReloadComments((n) => n + 1)}>↻ 댓글 목록 다시 시도</button>
           </div>
         )}
 
@@ -283,6 +313,15 @@ export default function CommunityPost({ postId }) {
             )}
           </div>
           {formError && <p className="bad small" role="alert" style={{ margin: 0 }}>{formError}</p>}
+          {needsLogin && (
+            <Link
+              className="btn btn-outline btn-sm"
+              href={`${ROUTES.login}?next=${encodeURIComponent(ROUTES.communityPost(postId))}`}
+              style={{ alignSelf: 'flex-start' }}
+            >
+              로그인하러 가기
+            </Link>
+          )}
         </form>
       </section>
     </>
