@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import { ROUTES } from '@/constants/routes';
 import { pageMeta } from '@/utils/seo';
 import LoginForm from './LoginForm';
@@ -11,5 +12,11 @@ export const metadata = pageMeta({
 });
 
 export default function LoginPage() {
-  return <div className={`page ${styles.page}`}><LoginForm /></div>;
+  return (
+    <div className={`page ${styles.page}`}>
+      <Suspense fallback={<section className={`card ${styles.auth}`}><p className="muted">로그인 화면을 준비하는 중…</p></section>}>
+        <LoginForm />
+      </Suspense>
+    </div>
+  );
 }

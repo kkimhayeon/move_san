@@ -2,14 +2,17 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { signIn } from '@/api/auth';
 import { useAuth } from '@/components/layout/AuthProvider';
 import { ROUTES } from '@/constants/routes';
+import { safeNextPath } from '@/utils/communityFormat';
 import styles from './auth.module.css';
 
 export default function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const nextPath = safeNextPath(searchParams.get('next'), ROUTES.home);
   const { user, loading, error: authError } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -18,8 +21,8 @@ export default function LoginForm() {
   const [message, setMessage] = useState('');
 
   useEffect(() => {
-    if (user) router.replace(ROUTES.home);
-  }, [user, router]);
+    if (user) router.replace(nextPath);
+  }, [user, router, nextPath]);
 
   async function handleLogin(event) {
     event.preventDefault();
@@ -28,7 +31,7 @@ export default function LoginForm() {
     setMessage('');
     try {
       await signIn(email.trim(), password);
-      router.replace(ROUTES.home);
+      router.replace(nextPath);
     } catch (error) {
       setMessage(error.code === 'invalid_credentials'
         ? '이메일 또는 비밀번호를 확인해 주세요.'
@@ -65,12 +68,10 @@ export default function LoginForm() {
         </label>
         {(message || authError) && <p className={styles.error} role="alert">{message || authError}</p>}
         <button className="btn" type="submit" disabled={pending || loading || !!user || !!authError}>
-          {loading ? '로그인 상태 확인 중…' : pending || user ? '홈으로 이동 중…' : '로그인'}
+          {loading ? '로그인 상태 확인 중…' : pending || user ? '이동 중…' : '로그인'}
         </button>
       </form>
       <Link href={ROUTES.signup} className="btn btn-outline">회원가입</Link>
-      {/* <p className={styles.note}>새로고침해도 로그인 상태가 유지돼요.<br />공용 기기에서는 이용 후 로그아웃해 주세요.</p> */}
-  
       <p className={styles.caption}>생활비 계산기와 동네 지도는 로그인 없이 이용할 수 있어요.</p>
     </section>
   );

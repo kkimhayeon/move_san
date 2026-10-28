@@ -83,19 +83,20 @@ export default function Header() {
         </Link>
 
         <nav className={styles.nav}>
-          {NAV.map((n) => (
-            <Link
-              key={n.href}
-              href={n.href}
-              className={
-                n.match.includes(path)
-                  ? `${styles.navItem} ${styles.active}`
-                  : styles.navItem
-              }
-            >
-              {n.label}
-            </Link>
-          ))}
+          {NAV.map((n) => {
+            const active = n.href === ROUTES.community
+              ? path === ROUTES.community || path.startsWith(`${ROUTES.community}/`)
+              : n.match.includes(path);
+            return (
+              <Link
+                key={n.href}
+                href={n.href}
+                className={active ? `${styles.navItem} ${styles.active}` : styles.navItem}
+              >
+                {n.label}
+              </Link>
+            );
+          })}
         </nav>
 
         <div className={styles.headerActions}>

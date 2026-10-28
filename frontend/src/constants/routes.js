@@ -5,6 +5,8 @@ export const ROUTES = {
   map: '/map',
   culture: '/culture',
   community: '/community',
+  communityWrite: '/community/write',
+  communityPost: (id) => `/community/${id}`,
   login: '/login',
   signup: '/signup',
   rentTest: '/rent-test',
@@ -28,8 +30,9 @@ export const SITEMAP_PATHS = [
 ];
 
 export const NOINDEX_PATHS = [
-  ROUTES.result, 
-  ROUTES.login, 
+  ROUTES.result,
+  ROUTES.login,
   ROUTES.signup,
-  ROUTES.rentTest
+  ROUTES.rentTest,
+  ROUTES.communityWrite,
 ];
