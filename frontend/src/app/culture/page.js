@@ -12,7 +12,7 @@ export default function CulturePage() {
   return (
     <ComingSoon
       eyebrow="CULTURE LIFE"
-      title={<>퇴근 후 부산,<br /><em>이렇게</em> 즐겨요</>}
+      title={<>Live Local,<br /><em>Feel Busan</em></>}
       subtitle="축제, 공연, 바다 액티비티까지 부산의 일상을 소개할 예정이에요."
       items={[
         '이달의 부산 축제·공연 일정',

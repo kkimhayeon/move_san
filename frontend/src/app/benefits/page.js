@@ -15,7 +15,7 @@ export default function BenefitsPage() {
       <Hero
         compact
         eyebrow="YOUTH BENEFITS"
-        title={<>부산의 청년을 위한<br /><em>다양한 혜택</em>을 한눈에</>}
+        title={<>당신의 첫걸음에,<br /><em>혜택을 더하다</em></>}
         subtitle="정책, 금융상품, 문화 및 모임 활동 등 부산시와 기관의 청년 지원사업을 확인해 보세요."
       />
       

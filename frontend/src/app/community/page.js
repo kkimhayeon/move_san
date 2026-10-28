@@ -15,7 +15,7 @@ export default function CommunityPage() {
       <Hero
         compact
         eyebrow="COMMUNITY"
-        title={<>부산에서의 <em>이야기</em>를 나눠요</>}
+        title={<>먼저 살아본 사람들이 들려주는,<br /><em>진짜 부산</em></>}
         subtitle="동네생활·부산꿀팁·Q&A·맛집 후기를 공유해 주세요."
       />
       <div className="page">

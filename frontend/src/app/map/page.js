@@ -15,7 +15,7 @@ export default function MapPage() {
       <Hero
         compact
         eyebrow="NEIGHBORHOOD MAP"
-        title={<>부산 동네별 <em>월세 중앙값</em><br />한눈에 보기</>}
+        title={<>부산 라이프,<br /><em>어디서 시작할까?</em></>}
         subtitle="구·군을 누르면 월세 중앙값과 동네 정보를 볼 수 있어요."
       />
       <BusanMap />
