@@ -1,13 +1,13 @@
 $kind: http-example
 request:
-  url: "{{baseUrl}}/api/v1/posts?page=1&page_size=20&q=string"
+  url: "{{baseUrl}}/api/v1/posts?page=1&page_size=20&category_code=LOCAL_LIFE"
   method: GET
   headers:
     Accept: application/json
   queryParams:
     page: "1"
     page_size: "20"
-    q: string
+    category_code: LOCAL_LIFE
   body:
     type: text
     content: ""
@@ -31,7 +31,8 @@ response:
                 "nickname": "부산살림사용자"
               },
               "created_at": "2026-10-26T07:00:00Z",
-              "category_code": "free",
+              "category_code": "LOCAL_LIFE",
+              "thumbnail_url": "https://example.supabase.co/storage/v1/object/public/community-images/u/a.jpg",
               "is_author": false
             }
           ],

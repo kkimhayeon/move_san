@@ -21,8 +21,20 @@ response:
         "result": {
           "items": [
             {
-              "code": "free",
-              "name": "자유게시판"
+              "code": "LOCAL_LIFE",
+              "name": "동네생활"
+            },
+            {
+              "code": "BUSAN_TIPS",
+              "name": "부산꿀팁"
+            },
+            {
+              "code": "QNA",
+              "name": "Q&A"
+            },
+            {
+              "code": "RESTAURANT_REVIEW",
+              "name": "맛집 후기"
             }
           ]
         }

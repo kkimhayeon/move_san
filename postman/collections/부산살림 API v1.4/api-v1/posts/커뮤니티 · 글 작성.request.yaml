@@ -1,5 +1,5 @@
 $kind: http-request
-description: ""
+description: image_ids 생략 또는 [] 허용(최대 5). 본인 소유·미삭제·미연결 사진만 배열 순서로 연결.
 url: "{{baseUrl}}/api/v1/posts"
 method: POST
 headers:
@@ -9,12 +9,11 @@ body:
   type: json
   content: |-
     {
-      "title": "string",
-      "content": "string",
-      "category_code": "string",
+      "title": "부산 생활에 대해 궁금해요",
+      "content": "부산 생활 정보를 공유해주세요.",
+      "category_code": "LOCAL_LIFE",
       "image_ids": [
-        "134e3988-c66f-cdc1-8439-8be4a5a51535",
-        "48e70e34-66ac-bcde-549b-a24d0344ce8c"
+        "22222222-2222-4222-8222-222222222222"
       ]
     }
 auth:

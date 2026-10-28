@@ -22,7 +22,7 @@ response:
     content: |-
       {
         "status": 400,
-        "message": "페이지 범위 또는 검색어 길이가 올바르지 않습니다.",
+        "message": "페이지 범위, 검색어 길이 또는 카테고리 코드가 올바르지 않습니다.",
         "result": null
       }
 order: 2000

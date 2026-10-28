@@ -1,5 +1,5 @@
 $kind: http-request
-description: "설계 기본안: JPEG/PNG/WebP 한 파일 최대 5MiB, 글당 최대 5장. 실제 파일 형식 검사, EXIF 제거, 임의 파일명, 실행불가 저장. 본인 업로드만 글에 연결. 미연결 파일 정리 정책은 구현 시 설정."
+description: FE→Flask→Storage. JPEG/PNG/WebP, 최대 5MiB. 매직 바이트 검증. 서버 SUPABASE_SECRET_KEY 필수.
 url: "{{baseUrl}}/api/v1/uploads/images"
 method: POST
 headers:
@@ -11,7 +11,7 @@ body:
     - type: file
       key: file
       src: ""
-      description: "(Required) "
+      description: "(Required) JPEG/PNG/WebP, max 5MiB"
 auth:
   type: bearer
   credentials:
