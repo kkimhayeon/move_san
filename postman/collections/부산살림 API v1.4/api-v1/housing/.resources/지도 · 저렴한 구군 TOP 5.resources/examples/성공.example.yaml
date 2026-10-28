@@ -50,7 +50,7 @@ response:
               "name": "영도구",
               "center_latitude": null,
               "center_longitude": null,
-              "median_rent": 30.625,
+              "median_rent": 31,
               "sample_count": 1181
             },
             {
@@ -58,7 +58,7 @@ response:
               "name": "기장군",
               "center_latitude": null,
               "center_longitude": null,
-              "median_rent": 33.4125,
+              "median_rent": 33,
               "sample_count": 2405
             },
             {
@@ -74,7 +74,7 @@ response:
               "name": "북구",
               "center_latitude": null,
               "center_longitude": null,
-              "median_rent": 35.3917,
+              "median_rent": 35,
               "sample_count": 2339
             }
           ]

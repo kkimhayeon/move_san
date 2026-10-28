@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from decimal import Decimal, InvalidOperation
+from decimal import Decimal, InvalidOperation, ROUND_HALF_EVEN
 from typing import Any
 
 from config import supabase
@@ -11,6 +11,16 @@ from schemas.housing_schema import (
     build_housing_metadata,
 )
 from utils.money import to_json_number
+
+_INTEGER = Decimal("1")
+
+
+def _round_to_int(value: Decimal) -> Decimal:
+    """소수 첫째 자리 기준 ROUND_HALF_EVEN → 정수."""
+    rounded = value.quantize(_INTEGER, rounding=ROUND_HALF_EVEN)
+    if rounded == 0:
+        return Decimal("0")
+    return rounded
 
 RPC_NAME = "get_housing_district_medians"
 
@@ -69,12 +79,15 @@ def _normalize_row(raw: dict[str, Any]) -> dict[str, Any]:
 
 def _serialize_item(row: dict[str, Any]) -> dict[str, Any]:
     median: Decimal | None = row["median_rent"]
+    # DB 중앙값은 소수 4자리 원값. 응답은 소수 첫째 자리 기준 반올림한 정수.
     return {
         "region_code": row["region_code"],
         "name": row["name"],
         "center_latitude": row["center_latitude"],
         "center_longitude": row["center_longitude"],
-        "median_rent": to_json_number(median) if median is not None else None,
+        "median_rent": (
+            to_json_number(_round_to_int(median)) if median is not None else None
+        ),
         "sample_count": row["sample_count"],
     }
 

@@ -24,8 +24,8 @@ info:
     round의 ties-to-even 의도를 유지하되 binary float에 의존하지 않음. 1.25→1.2,1.35→1.4,-1.25→-1.2.
     -0은 0으로 직렬화. API 숫자는 JSON number.
 
-    지도 median_rent는 소수 최대 4자리의 API 원값, 표시는 소수 1자리. 선택 후 busan_rent에 API 원값 전달. 직접
-    편집한 경우 편집값을 사용.
+    지도 median_rent는 DB에서 소수 4자리로 집계한 뒤 API 응답에서 ROUND_HALF_EVEN으로 정수 반올림해 반환한다. 선택 후
+    busan_rent에 이 표시값을 전달. 직접 편집한 경우 편집값을 사용.
 
     지도 월세는 보증금 1000만원 환산(adjusted_1000), 2023-09~2026-08, 전용면적 ≤33㎡, 주택유형 단독/다가구·연립다세대·오피스텔.
     구군 중심좌표·출처명·갱신시각은 프로젝트에 검증된 값이 없어 null. 지역 코드/컬처/RAG는 미정.
@@ -429,8 +429,8 @@ paths:
       summary: 지도 · 구군별 중앙값 월세
       description: 부산 16개 구군(기장군 포함). DB RPC로 보증금 1000만원 환산 월세 중앙값을 집계한다. 기간 2023-09~2026-08,
         주택유형 단독/다가구·연립다세대·오피스텔, 전용면적 0 초과 33㎡ 이하. null 환산값 제외, 음수 환산값 포함. 이름 오름차순,
-        동률 시 region_code 오름차순. median_rent는 소수 최대 4자리 API 원값(표시 반올림은 프론트). 구 선택 시 busan_rent에
-        원값 전달. 중심좌표·출처·갱신시각은 검증값 없으면 null. 집계 행이 없으면 503.
+        동률 시 region_code 오름차순. DB 중앙값은 소수 4자리로 집계하고, 응답 median_rent는 ROUND_HALF_EVEN 정수.
+        구 선택 시 busan_rent에 이 표시값을 전달. 중심좌표·출처·갱신시각은 검증값 없으면 null. 집계 행이 없으면 503.
       operationId: get_api_housing_districts
       x-mvp-phase: 1
       x-implementation-status: code-ready-pending-rpc-apply
@@ -535,13 +535,13 @@ paths:
                     name: 영도구
                     center_latitude: null
                     center_longitude: null
-                    median_rent: 30.625
+                    median_rent: 31
                     sample_count: 1181
                   - region_code: '26710'
                     name: 기장군
                     center_latitude: null
                     center_longitude: null
-                    median_rent: 33.4125
+                    median_rent: 33
                     sample_count: 2405
                   - region_code: '26380'
                     name: 사하구
@@ -553,7 +553,7 @@ paths:
                     name: 북구
                     center_latitude: null
                     center_longitude: null
-                    median_rent: 35.3917
+                    median_rent: 35
                     sample_count: 2339
         '400':
           description: limit은 1부터 5까지의 정수여야 합니다.
@@ -2168,7 +2168,7 @@ components:
           nullable: true
         median_rent:
           type: number
-          description: 데이터 없으면 null. 0원과 구별. 소수 최대 4자리
+          description: 데이터 없으면 null. 0원과 구별. DB 집계(소수 4자리) 후 ROUND_HALF_EVEN 정수로 반환
           nullable: true
         sample_count:
           type: integer
