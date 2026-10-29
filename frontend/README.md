@@ -25,7 +25,7 @@ npm run dev
 | `/result` | 계산 결과 (1년 기준, 항목별 비교, 금융상품). noindex | F-02 |
 | `/map` | 동네 지도 (구·군별 월세 중앙값, 원룸/투룸). 검색 노출 | F-03 |
 | `/benefits` | 청년 혜택 (카테고리·조건 필터). 검색 노출 | — |
-| `/culture` | 컬처라이프 (준비 중 화면). 검색 노출 | — |
+| `/culture` | 컬처라이프 (열린다·머문다·만난다). 검색 노출 | — |
 | `/community` | 커뮤니티 (예시 글). 검색 노출 | P2 |
 | `/login` | 로그인·회원가입 자리 (Supabase Auth 검토 중). noindex | — |
 | `/rent-test` | Flask `GET /api/rent` 연동 테스트. noindex | — |

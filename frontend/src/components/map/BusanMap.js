@@ -226,6 +226,16 @@ export default function BusanMap() {
                 <path d={sel.path} fill="none" stroke="#0A1F4D" strokeWidth={6} pointerEvents="none" />
               </g>
             </svg>
+            {sel.landmark && (
+              <img
+                key={sel.name}
+                className={styles.landmark}
+                src={sel.landmark.imageUrl}
+                alt=""
+                aria-hidden="true"
+                draggable={false}
+              />
+            )}
             {GU.map((g) => {
               const rent = rentOf(g);
               const on = g.name === sel.name;

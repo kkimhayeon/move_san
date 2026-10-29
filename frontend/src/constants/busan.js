@@ -3,6 +3,7 @@
 // - region_code: 행정구역 코드. Flask /api/v1/housing/* items와 조인할 때 사용
 // - rent·count: 예전 목업 필드(지도 화면은 API median_rent·sample_count를 쓰고 이 값으로 fallback하지 않음)
 // - dongs: 행정동 목록 (1동·2동은 하나로 합침)
+// - landmark(선택): 지역 선택 시 지도 왼쪽 상단에 크게 띄울 PNG (imageUrl)
 export const MAP_HEIGHT = 959;
 
 export const GU = [
@@ -125,7 +126,10 @@ export const GU = [
    "연지동",
    "전포동",
    "초읍동"
-  ]
+  ],
+  "landmark": {
+   "imageUrl": "/landmarks/jeonpo.png"
+  }
  },
  {
   "name": "동래구",
