@@ -28,7 +28,8 @@ info:
     busan_rent에 이 표시값을 전달. 직접 편집한 경우 편집값을 사용.
 
     지도 월세는 보증금 1000만원 환산(adjusted_1000), 2023-09~2026-08, 전용면적 ≤33㎡, 주택유형 단독/다가구·연립다세대·오피스텔.
-    구군 중심좌표·출처명·갱신시각은 프로젝트에 검증된 값이 없어 null. 지역 코드/컬처/RAG는 미정.
+    구군 중심좌표·출처명·갱신시각은 프로젝트에 검증된 값이 없어 null. 컬처라이프 공개 목록은
+    /api/culture/events·places·articles. 지역 코드/RAG는 미정.
     챗봇은 인증 미확정으로 실행용 paths에서 제외하고 x-pending-apis에 보관.
 
     예시 정책/상품/지역/통계/URL은 구조 설명용 가상값이다. 실제 서비스 데이터로 사용하지 않는다.'
@@ -239,6 +240,308 @@ paths:
                 message: 서버 내부 오류가 발생했습니다.
                 result: null
       x-api-id: POLICY-002
+  /api/culture/events:
+    get:
+      tags:
+      - 컬처
+      summary: 컬처 · 행사 목록
+      description: 'culture_events 공개 목록. status=approved를 서버에서 강제하며 클라이언트가
+        status로 미승인 데이터를 조회할 수 없다. section 기본 open. 한국시간(UTC+9) 오늘 기준
+        종료 기준일(end_date, 없으면 start_date)이 오늘보다 이전이면 종료. 종료 당일은 포함.
+        종료 행사는 keep_after_end=true만 반환하며 schedule_status는 ended. 날짜가 모두 없으면
+        노출하고 schedule_status=unknown. 공개 조건·필터를 DB에서 적용한 뒤 count·페이지네이션.
+        정렬 sort_weight DESC → start_date ASC NULLS LAST → id ASC. raw·content_key·source·source_id
+        제외. 로그인 불필요.'
+      operationId: get_api_culture_events
+      x-mvp-phase: 1
+      x-implementation-status: implemented
+      security: []
+      responses:
+        '200':
+          description: 성공. 빈 결과·범위 초과 페이지는 items=[] 및 total 유지.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/get_api_culture_eventsResponse'
+              example:
+                status: 200
+                message: 컬처 행사 목록 조회에 성공했습니다.
+                result:
+                  items:
+                  - id: 7a17c810-21a1-442d-887d-c01f9624f783
+                    section: open
+                    program_section: null
+                    category: ART
+                    title: 예시 전시
+                    summary: 요약
+                    start_date: '2026-10-06'
+                    end_date: '2026-11-07'
+                    schedule_note: null
+                    place_id: null
+                    place_name: 예시 공간
+                    district: 해운대구
+                    status: approved
+                    badge_override: null
+                    sort_weight: 0
+                    keep_after_end: false
+                    image_path: null
+                    image_credit: null
+                    link_url: https://example.com/event
+                    created_at: '2026-10-29T01:08:36.966636Z'
+                    updated_at: '2026-10-29T01:08:36.966636Z'
+                    schedule_status: ongoing
+                  page: 1
+                  page_size: 8
+                  total: 1
+        '400':
+          description: section·category·page·page_size 값이 올바르지 않습니다.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                status: 400
+                message: category 값이 올바르지 않습니다.
+                result: null
+        '500':
+          description: 서버 내부 오류가 발생했습니다.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                status: 500
+                message: 서버 내부 오류가 발생했습니다.
+                result: null
+      parameters:
+      - name: section
+        in: query
+        required: false
+        description: open | stay. 기본 open. 열린다=open, 머문다=stay.
+        schema:
+          type: string
+          enum:
+          - open
+          - stay
+          default: open
+      - name: category
+        in: query
+        required: false
+        description: section별 허용 코드. open=ART|MUSIC|POP_UP|WELLNESS, stay=booktalk|stamp_tour.
+        schema:
+          type: string
+      - name: district
+        in: query
+        required: false
+        description: 지역명 정확 일치
+        schema:
+          type: string
+      - name: page
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 1
+          default: 1
+      - name: page_size
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 50
+          default: 8
+      x-api-id: CULTURE-001
+  /api/culture/places:
+    get:
+      tags:
+      - 컬처
+      summary: 컬처 · 공간 목록
+      description: 'culture_places 공개 목록. is_published=true 강제. kind는 bookstore|bathhouse|cinema.
+        map_x/map_y는 일러스트 지도 상대 좌표, lat/lng는 실제 위경도이며 서로 변환하지 않는다. 좌표가
+        없어도 공간을 반환한다. 정렬 display_order ASC → id ASC. content_key 제외. 로그인 불필요.'
+      operationId: get_api_culture_places
+      x-mvp-phase: 1
+      x-implementation-status: implemented
+      security: []
+      responses:
+        '200':
+          description: 성공. 빈 결과·범위 초과 페이지는 items=[] 및 total 유지.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/get_api_culture_placesResponse'
+              example:
+                status: 200
+                message: 컬처 공간 목록 조회에 성공했습니다.
+                result:
+                  items:
+                  - id: 6eae92a5-4a6c-428a-bb1a-eda135f6315b
+                    kind: bookstore
+                    name: 예시 서점
+                    district: 수영구
+                    one_liner: 한줄 소개
+                    experience: null
+                    since_year: null
+                    icon_key: null
+                    lat: null
+                    lng: null
+                    map_x: 60
+                    map_y: 54
+                    naver_map_url: null
+                    instagram_url: null
+                    display_order: 1
+                    is_published: true
+                    created_at: '2026-10-29T01:08:36.966636Z'
+                    updated_at: '2026-10-29T01:08:36.966636Z'
+                  page: 1
+                  page_size: 20
+                  total: 1
+        '400':
+          description: kind·page·page_size 값이 올바르지 않습니다.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                status: 400
+                message: kind 값이 올바르지 않습니다.
+                result: null
+        '500':
+          description: 서버 내부 오류가 발생했습니다.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                status: 500
+                message: 서버 내부 오류가 발생했습니다.
+                result: null
+      parameters:
+      - name: kind
+        in: query
+        required: false
+        description: bookstore | bathhouse | cinema
+        schema:
+          type: string
+          enum:
+          - bookstore
+          - bathhouse
+          - cinema
+      - name: district
+        in: query
+        required: false
+        description: 지역명 정확 일치
+        schema:
+          type: string
+      - name: page
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 1
+          default: 1
+      - name: page_size
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 50
+          default: 20
+      x-api-id: CULTURE-002
+  /api/culture/articles:
+    get:
+      tags:
+      - 컬처
+      summary: 컬처 · 글 목록
+      description: 'culture_articles 공개 목록. is_published=true 강제. expires_at이 NULL이거나
+        현재 시각보다 미래인 행만. article_type은 news|story, 생략 시 둘 다. links는 JSON 배열 유지.
+        정렬 display_order ASC → id ASC. content_key 제외. 로그인 불필요. 만난다 탭 등에서 사용.'
+      operationId: get_api_culture_articles
+      x-mvp-phase: 1
+      x-implementation-status: implemented
+      security: []
+      responses:
+        '200':
+          description: 성공. 빈 결과·범위 초과 페이지는 items=[] 및 total 유지.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/get_api_culture_articlesResponse'
+              example:
+                status: 200
+                message: 컬처 글 목록 조회에 성공했습니다.
+                result:
+                  items:
+                  - id: cccccccc-cccc-4ccc-8ccc-cccccccccccc
+                    article_type: news
+                    title: 예시 뉴스
+                    body: 본문
+                    label: null
+                    meta: null
+                    badge: null
+                    badge_color: null
+                    image_path: null
+                    image_credit: null
+                    image_badge: null
+                    links:
+                    - label: 원문 보기
+                      url: https://example.com/article
+                    expires_at: null
+                    display_order: 1
+                    is_published: true
+                    created_at: '2026-10-29T01:08:36.966636Z'
+                    updated_at: '2026-10-29T01:08:36.966636Z'
+                  page: 1
+                  page_size: 10
+                  total: 1
+        '400':
+          description: article_type·page·page_size 값이 올바르지 않습니다.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                status: 400
+                message: article_type 값이 올바르지 않습니다.
+                result: null
+        '500':
+          description: 서버 내부 오류가 발생했습니다.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                status: 500
+                message: 서버 내부 오류가 발생했습니다.
+                result: null
+      parameters:
+      - name: article_type
+        in: query
+        required: false
+        description: news | story. 생략 시 둘 다.
+        schema:
+          type: string
+          enum:
+          - news
+          - story
+      - name: page
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 1
+          default: 1
+      - name: page_size
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 50
+          default: 10
+      x-api-id: CULTURE-003
   /api/v1/financial-products:
     get:
       tags:
@@ -2043,6 +2346,299 @@ components:
           items:
             type: string
           description: 고정 순서 정책, 금융상품, 문화 및 모임 활동
+    CultureEvent:
+      type: object
+      additionalProperties: false
+      required:
+      - id
+      - section
+      - category
+      - title
+      - schedule_status
+      properties:
+        id:
+          type: string
+          format: uuid
+        section:
+          type: string
+          enum:
+          - open
+          - stay
+        program_section:
+          type: string
+          nullable: true
+        category:
+          type: string
+        title:
+          type: string
+        summary:
+          type: string
+          nullable: true
+        start_date:
+          type: string
+          format: date
+          nullable: true
+        end_date:
+          type: string
+          format: date
+          nullable: true
+        schedule_note:
+          type: string
+          nullable: true
+        place_id:
+          type: string
+          format: uuid
+          nullable: true
+        place_name:
+          type: string
+          nullable: true
+        district:
+          type: string
+          nullable: true
+        status:
+          type: string
+        badge_override:
+          type: string
+          nullable: true
+        sort_weight:
+          type: integer
+        keep_after_end:
+          type: boolean
+        image_path:
+          type: string
+          nullable: true
+        image_credit:
+          type: string
+          nullable: true
+        link_url:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          nullable: true
+        updated_at:
+          type: string
+          format: date-time
+          nullable: true
+        schedule_status:
+          type: string
+          enum:
+          - upcoming
+          - ongoing
+          - ended
+          - unknown
+    CultureEventPage:
+      type: object
+      additionalProperties: false
+      required:
+      - items
+      - page
+      - page_size
+      - total
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/CultureEvent'
+        page:
+          type: integer
+          minimum: 1
+        page_size:
+          type: integer
+          minimum: 1
+          maximum: 50
+        total:
+          type: integer
+          minimum: 0
+    CulturePlace:
+      type: object
+      additionalProperties: false
+      required:
+      - id
+      - kind
+      - name
+      properties:
+        id:
+          type: string
+          format: uuid
+        kind:
+          type: string
+          enum:
+          - bookstore
+          - bathhouse
+          - cinema
+        name:
+          type: string
+        district:
+          type: string
+          nullable: true
+        one_liner:
+          type: string
+          nullable: true
+        experience:
+          type: string
+          nullable: true
+        since_year:
+          type: integer
+          nullable: true
+        icon_key:
+          type: string
+          nullable: true
+        lat:
+          type: number
+          nullable: true
+          description: 실제 위도. map_x와 변환하지 않음
+        lng:
+          type: number
+          nullable: true
+          description: 실제 경도. map_y와 변환하지 않음
+        map_x:
+          type: number
+          nullable: true
+          description: 일러스트 지도용 상대 X
+        map_y:
+          type: number
+          nullable: true
+          description: 일러스트 지도용 상대 Y
+        naver_map_url:
+          type: string
+          nullable: true
+        instagram_url:
+          type: string
+          nullable: true
+        display_order:
+          type: integer
+        is_published:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+          nullable: true
+        updated_at:
+          type: string
+          format: date-time
+          nullable: true
+    CulturePlacePage:
+      type: object
+      additionalProperties: false
+      required:
+      - items
+      - page
+      - page_size
+      - total
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/CulturePlace'
+        page:
+          type: integer
+          minimum: 1
+        page_size:
+          type: integer
+          minimum: 1
+          maximum: 50
+        total:
+          type: integer
+          minimum: 0
+    CultureArticleLink:
+      type: object
+      additionalProperties: false
+      required:
+      - label
+      - url
+      properties:
+        label:
+          type: string
+        url:
+          type: string
+    CultureArticle:
+      type: object
+      additionalProperties: false
+      required:
+      - id
+      - article_type
+      - title
+      - body
+      - links
+      properties:
+        id:
+          type: string
+          format: uuid
+        article_type:
+          type: string
+          enum:
+          - news
+          - story
+        title:
+          type: string
+        body:
+          type: string
+        label:
+          type: string
+          nullable: true
+        meta:
+          type: string
+          nullable: true
+        badge:
+          type: string
+          nullable: true
+        badge_color:
+          type: string
+          nullable: true
+        image_path:
+          type: string
+          nullable: true
+        image_credit:
+          type: string
+          nullable: true
+        image_badge:
+          type: string
+          nullable: true
+        links:
+          type: array
+          items:
+            $ref: '#/components/schemas/CultureArticleLink'
+        expires_at:
+          type: string
+          format: date-time
+          nullable: true
+        display_order:
+          type: integer
+        is_published:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+          nullable: true
+        updated_at:
+          type: string
+          format: date-time
+          nullable: true
+    CultureArticlePage:
+      type: object
+      additionalProperties: false
+      required:
+      - items
+      - page
+      - page_size
+      - total
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/CultureArticle'
+        page:
+          type: integer
+          minimum: 1
+        page_size:
+          type: integer
+          minimum: 1
+          maximum: 50
+        total:
+          type: integer
+          minimum: 0
     Category:
       type: object
       additionalProperties: false
@@ -2573,6 +3169,54 @@ components:
           description: 처리 결과 메시지
         result:
           $ref: '#/components/schemas/PolicyCategories'
+    get_api_culture_eventsResponse:
+      type: object
+      additionalProperties: false
+      required:
+      - status
+      - message
+      - result
+      properties:
+        status:
+          type: integer
+          enum:
+          - 200
+        message:
+          type: string
+        result:
+          $ref: '#/components/schemas/CultureEventPage'
+    get_api_culture_placesResponse:
+      type: object
+      additionalProperties: false
+      required:
+      - status
+      - message
+      - result
+      properties:
+        status:
+          type: integer
+          enum:
+          - 200
+        message:
+          type: string
+        result:
+          $ref: '#/components/schemas/CulturePlacePage'
+    get_api_culture_articlesResponse:
+      type: object
+      additionalProperties: false
+      required:
+      - status
+      - message
+      - result
+      properties:
+        status:
+          type: integer
+          enum:
+          - 200
+        message:
+          type: string
+        result:
+          $ref: '#/components/schemas/CultureArticlePage'
     get_api_financial_productsResponse:
       type: object
       additionalProperties: false
@@ -2936,7 +3580,8 @@ x-open-decisions:
 - item: 지역 코드
   pending: 법정동/행정동 및 코드 체계 문서화. 지도 API는 거래 테이블 sggCd/sggNm(기장군 포함) 사용.
 - item: 컬처/즐길 거리
-  pending: 장소·행사 등 대상과 실제 데이터 미제공. 지도 내 즐길 거리 포함, API 필드를 아직 확정하지 않음.
+  resolved: culture_events·places·articles 공개 목록 API(/api/culture/*) 구현. 커버 슬라이드·홍보
+    배너는 프론트 정적. 지도 내 즐길 거리 연동은 별도.
 - item: 회원
   pending: Supabase Auth 사용 확정. 모든 회원 기능 이번 구현 포함. 이메일 확인/redirect URL/프로필 초기화 설정은
     연결 단계에서 결정.
