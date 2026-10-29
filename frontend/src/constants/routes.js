@@ -3,6 +3,7 @@ export const ROUTES = {
   result: '/result',
   benefits: '/benefits',
   map: '/map',
+  map3d: '/map-3d',
   culture: '/culture',
   community: '/community',
   communityWrite: '/community/write',
@@ -34,5 +35,6 @@ export const NOINDEX_PATHS = [
   ROUTES.login,
   ROUTES.signup,
   ROUTES.rentTest,
+  ROUTES.map3d,
   ROUTES.communityWrite,
 ];
