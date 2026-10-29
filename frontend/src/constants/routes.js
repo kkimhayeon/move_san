@@ -3,6 +3,9 @@ export const ROUTES = {
   result: '/result',
   benefits: '/benefits',
   map: '/map',
+  /** WebGL 불가·3D 오류 시 쓰는 2D 폴백 (내비·검색 미노출) */
+  map2d: '/map-2d',
+  /** 예전 테스트 경로. /map 으로 리다이렉트 */
   map3d: '/map-3d',
   culture: '/culture',
   community: '/community',
@@ -16,7 +19,7 @@ export const ROUTES = {
 export const NAV = [
   { href: ROUTES.home, label: '생활비 계산기', match: [ROUTES.home, ROUTES.result] },
   { href: ROUTES.benefits, label: '청년 혜택', match: [ROUTES.benefits] },
-  { href: ROUTES.map, label: '동네 탐색', match: [ROUTES.map] },
+  { href: ROUTES.map, label: '동네 탐색', match: [ROUTES.map, ROUTES.map2d] },
   { href: ROUTES.culture, label: '컬처라이프', match: [ROUTES.culture] },
   { href: ROUTES.community, label: '커뮤니티', match: [ROUTES.community] },
 ];
@@ -35,6 +38,7 @@ export const NOINDEX_PATHS = [
   ROUTES.login,
   ROUTES.signup,
   ROUTES.rentTest,
+  ROUTES.map2d,
   ROUTES.map3d,
   ROUTES.communityWrite,
 ];

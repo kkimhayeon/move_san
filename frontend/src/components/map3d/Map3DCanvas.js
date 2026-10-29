@@ -41,8 +41,8 @@ function Fallback({ message }) {
   return (
     <div className={styles.webglFallback} role="alert">
       <p>{message || '이 브라우저에서는 3D 지도를 표시할 수 없어요.'}</p>
-      <Link href={ROUTES.map} className="btn btn-grad">
-        기존 2D 지도로 보기 →
+      <Link href={ROUTES.map2d} className="btn btn-grad">
+        간단 지도(2D)로 보기 →
       </Link>
     </div>
   );

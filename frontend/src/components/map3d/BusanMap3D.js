@@ -223,8 +223,7 @@ export default function BusanMap3D() {
       <div className={`${styles.layout} lift`}>
         <section className="card">
           <div className={styles.toolbar}>
-            <h2>구·군별 월세 중앙값 (3D)</h2>
-            <a href={ROUTES.map} className="btn-ghost" style={{ fontSize: 13 }}>2D 지도 보기</a>
+            <h2>구·군별 월세 중앙값</h2>
           </div>
 
           <div className={styles.stage}>
@@ -241,25 +240,27 @@ export default function BusanMap3D() {
                 </button>
               )}
             </div>
-            <div className={styles.legend}>
-              원룸 월세
-              {BINS.map((b, i) => {
-                const up = Math.floor(b.max);
-                const low = i === 0 ? null : Math.floor(BINS[i - 1].max) + 1;
-                const text = low == null ? `~${up}` : b.max === Infinity ? `${low}~` : `${low}~${up}`;
-                return (
-                  <span key={b.color}>
-                    <i style={{ background: b.color }} />
-                    {text}
-                  </span>
-                );
-              })}
-              <span>
-                <i style={{ background: MISSING_FILL }} />
-                없음
-              </span>
+            <div className={styles.stageFooter}>
+              <div className={styles.legend}>
+                원룸 월세
+                {BINS.map((b, i) => {
+                  const up = Math.floor(b.max);
+                  const low = i === 0 ? null : Math.floor(BINS[i - 1].max) + 1;
+                  const text = low == null ? `~${up}` : b.max === Infinity ? `${low}~` : `${low}~${up}`;
+                  return (
+                    <span key={b.color}>
+                      <i style={{ background: b.color }} />
+                      {text}
+                    </span>
+                  );
+                })}
+                <span>
+                  <i style={{ background: MISSING_FILL }} />
+                  없음
+                </span>
+              </div>
+              <p className={styles.hint}>드래그로 회전 · 휠로 확대 · 바다 클릭 시 전체 보기</p>
             </div>
-            <p className={styles.hint}>드래그로 회전 · 휠로 확대 · 바다 클릭 시 전체 보기</p>
           </div>
 
           {districts.loading && (

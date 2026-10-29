@@ -14,7 +14,7 @@ export const metadata = pageMeta({
 });
 
 const FEATURES = [
-  { href: ROUTES.map, title: '부산 동네별 월세 지도', text: '구·군을 누르면 원룸 월세 중앙값과 동네 정보를 볼 수 있어요.', icon: 'M9 4l-6 2v14l6-2 6 2 6-2V4l-6 2z M9 4v14 M15 6v14' },
+  { href: ROUTES.map, title: '부산 동네별 월세 지도', text: '구·군을 누르면 월세 중앙값과 랜드마크를 입체 지도에서 볼 수 있어요.', icon: 'M9 4l-6 2v14l6-2 6 2 6-2V4l-6 2z M9 4v14 M15 6v14' },
   { href: ROUTES.benefits, title: '청년 정책·금융상품', text: '흩어져 있는 부산 청년 혜택과 지역 금융상품을 모아 보여줘요.', icon: 'M4 10h16 M5 10V20h14V10 M12 3l8 5H4z M9 14v3 M15 14v3' },
   { href: ROUTES.community, title: '무브산 커뮤니티', text: '먼저 부산으로 옮긴 사람들의 동네·출퇴근 이야기를 나눠요.', icon: 'M4 5h16v11H8l-4 4z M8 10h8' },
 ];

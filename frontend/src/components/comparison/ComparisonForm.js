@@ -1,6 +1,5 @@
 'use client';
 
-import Link from 'next/link';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { fetchComparison, toComparisonBody } from '@/api/comparison';
@@ -14,6 +13,7 @@ import { 물가비율, 부산물가절감률 } from '@/utils/calc';
 import { getUserErrorMessage, isAbortError } from '@/utils/errors';
 import { sanitizeMoney } from '@/utils/moneyInput';
 import { BUSAN_FIELDS, FieldIcon, SEOUL_FIELDS } from './fields';
+import MapRentPickerModal from './MapRentPickerModal';
 import styles from './ComparisonForm.module.css';
 
 function placeholderFor(field, inputs) {
@@ -24,7 +24,7 @@ function placeholderFor(field, inputs) {
   return field.placeholder;
 }
 
-function FieldHint({ hint }) {
+function FieldHint({ hint, onOpenMap }) {
   if (hint === 'livingRatio') {
     return (
       <span className={styles.hint}>
@@ -38,9 +38,9 @@ function FieldHint({ hint }) {
     return (
       <span className={styles.hint}>
         부산 월세를 모르겠다면{' '}
-        <Link href={ROUTES.map} className={styles.mapLink}>
+        <button type="button" className={styles.mapLink} onClick={onOpenMap}>
           동네 지도
-        </Link>
+        </button>
         에서 골라보세요
       </span>
     );
@@ -49,7 +49,7 @@ function FieldHint({ hint }) {
   return null;
 }
 
-function MoneyField({ field, inputs, invalid, onChange }) {
+function MoneyField({ field, inputs, invalid, onChange, onOpenMap }) {
   return (
     <label className={styles.field}>
       <span className={styles.label}>
@@ -73,7 +73,7 @@ function MoneyField({ field, inputs, invalid, onChange }) {
         <span>만원</span>
       </span>
 
-      <FieldHint hint={field.hint} />
+      <FieldHint hint={field.hint} onOpenMap={onOpenMap} />
     </label>
   );
 }
@@ -111,11 +111,13 @@ export default function ComparisonForm() {
   const [tried, setTried] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [mapOpen, setMapOpen] = useState(false);
 
   const fieldProps = {
     inputs,
     tried,
     missing,
+    onOpenMap: () => setMapOpen(true),
     onChange: (key, value) => {
       setError(null);
       setField(key, value);
@@ -146,77 +148,88 @@ export default function ComparisonForm() {
   };
 
   return (
-    <section className="card lift">
-      <form onSubmit={submit}>
-        <div className={styles.head}>
-          <h2>생활비 비교 계산기</h2>
+    <>
+      <section className="card lift">
+        <form onSubmit={submit}>
+          <div className={styles.head}>
+            <h2>생활비 비교 계산기</h2>
 
-          <button
-            type="button"
-            className="btn-ghost"
-            disabled={loading}
-            onClick={() => {
-              reset();
-              setTried(false);
-              setError(null);
-            }}
-          >
-            ↺ 초기화
-          </button>
-        </div>
-
-        <div className={styles.cols}>
-          <CityColumn
-            title="서울"
-            description="현재 살고 있는 곳의 정보를 기준으로 입력해주세요."
-            fields={SEOUL_FIELDS}
-            {...fieldProps}
-          />
-
-          <div className={styles.arrow} aria-hidden="true">
-            <svg
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
+            <button
+              type="button"
+              className="btn-ghost"
+              disabled={loading}
+              onClick={() => {
+                reset();
+                setTried(false);
+                setError(null);
+              }}
             >
-              <path d="M5 12h14 M13 6l6 6-6 6" />
-            </svg>
+              ↺ 초기화
+            </button>
           </div>
 
-          <CityColumn
-            title="부산"
-            description="이사하려는 곳의 정보를 기준으로 입력해주세요."
-            fields={BUSAN_FIELDS}
-            busan
-            {...fieldProps}
-          />
-        </div>
+          <div className={styles.cols}>
+            <CityColumn
+              title="서울"
+              description="현재 살고 있는 곳의 정보를 기준으로 입력해주세요."
+              fields={SEOUL_FIELDS}
+              {...fieldProps}
+            />
 
-        <div className={styles.foot}>
-          {tried && !complete && (
-            <span className="small bad">{missingPrompt(missing)}</span>
-          )}
+            <div className={styles.arrow} aria-hidden="true">
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M5 12h14 M13 6l6 6-6 6" />
+              </svg>
+            </div>
 
-          {error && (
-            <span className="small bad" role="alert">
-              {error}
-            </span>
-          )}
+            <CityColumn
+              title="부산"
+              description="이사하려는 곳의 정보를 기준으로 입력해주세요."
+              fields={BUSAN_FIELDS}
+              busan
+              {...fieldProps}
+            />
+          </div>
 
-          <button
-            type="submit"
-            className="btn btn-grad"
-            disabled={loading}
-          >
-            {loading ? '계산 중…' : '결과 보기 →'}
-          </button>
-        </div>
-      </form>
-    </section>
+          <div className={styles.foot}>
+            {tried && !complete && (
+              <span className="small bad">{missingPrompt(missing)}</span>
+            )}
+
+            {error && (
+              <span className="small bad" role="alert">
+                {error}
+              </span>
+            )}
+
+            <button
+              type="submit"
+              className="btn btn-grad"
+              disabled={loading}
+            >
+              {loading ? '계산 중…' : '결과 보기 →'}
+            </button>
+          </div>
+        </form>
+      </section>
+
+      <MapRentPickerModal
+        open={mapOpen}
+        onClose={() => setMapOpen(false)}
+        onApply={(rent) => {
+          setError(null);
+          setField('busanRent', rent);
+        }}
+      />
+    </>
   );
 }

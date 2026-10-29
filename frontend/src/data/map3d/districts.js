@@ -87,7 +87,7 @@ export const DISTRICTS = {
   saha: {
     lm: '감천문화마을',
     desc: '산비탈을 따라 알록달록한 집들이 계단처럼 이어진 마을이에요. 골목마다 벽화가 있어요.',
-    at: [-2.8, 4.9],
+    at: [-3.0, 4.9],
     model: '/models/gamcheon.glb',
     modelScale: 1,
     modelFit: 2.5,
