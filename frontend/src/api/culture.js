@@ -58,6 +58,10 @@ async function fetchCultureApi(path, options = {}) {
 
     return data;
   } catch (err) {
+    // Strict Mode 언마운트·탭 전환 등으로 취소된 요청은 실패로 취급하지 않는다.
+    if (options.signal?.aborted || isAbortError(err)) {
+      throw createApiError({ kind: 'abort' });
+    }
     const apiErr = isApiError(err) ? err : apiErrorFromCatch(err);
     if (!isAbortError(apiErr)) logApiError(`fetchCultureApi ${path}`, apiErr);
     throw apiErr;

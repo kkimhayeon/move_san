@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { fetchCultureArticles } from '@/api/culture';
 import { MEET_PAGE_SIZE } from '@/constants/culture';
+import { filterCultureItemsWithImage } from '@/utils/culture';
 import { getUserErrorMessage, isAbortError } from '@/utils/errors';
 import CultureMedia from './CultureMedia';
 import { CultureEmpty, CultureError, CultureLoading, ERROR_MESSAGE } from './CultureStatus';
@@ -48,59 +49,62 @@ export default function MeetTab() {
     return () => controller.abort();
   }, [reloadToken]);
 
+  const visibleItems = useMemo(
+    () => filterCultureItemsWithImage(state.items),
+    [state.items],
+  );
+
   return (
     <div className={styles.panelInner}>
       <div className={styles.sectionIntro}>
-        <h2>만난다</h2>
-        <p className="muted">사람을 모으고 취향을 잇는 로컬 스토리를 읽어보세요.</p>
+        <span className={styles.sectionPill}>만난다</span>
+        <h2>부산에 오면, 이런 사람들을 만나요</h2>
+        <p className={styles.meetLead}>
+          도시에 정을 붙이게 하는 건 결국 사람이에요. 부산에서 음악과 공간을 함께 만들어가는 커뮤니티를 소개합니다.
+        </p>
       </div>
 
       {state.loading ? <CultureLoading label="스토리를 불러오는 중…" skeletonCount={2} /> : null}
       {!state.loading && state.error ? (
         <CultureError onRetry={() => setReloadToken((n) => n + 1)} />
       ) : null}
-      {!state.loading && !state.error && state.items.length === 0 ? (
+      {!state.loading && !state.error && visibleItems.length === 0 ? (
         <CultureEmpty />
       ) : null}
 
-      {!state.loading && !state.error && state.items.length > 0 ? (
+      {!state.loading && !state.error && visibleItems.length > 0 ? (
         <div className={styles.storyGrid}>
-          {state.items.map((item) => (
+          {visibleItems.map((item) => (
             <article key={item.id} className={styles.storyCard}>
               <CultureMedia
                 imagePath={item.image_path}
-                alt=""
-                credit={item.image_credit}
-                badge={item.image_badge}
+                alt={item.title || ''}
+                credit={item.image_badge ? null : item.image_credit}
+                badge={item.image_badge || item.image_credit}
+                badgeTone={item.image_badge ? 'brand' : 'dark'}
+                ratio="story"
+                fit="cover"
               />
-              <div className={styles.storyBodyWrap}>
-                {item.label ? <span className={styles.storyLabel}>{item.label}</span> : null}
-                <h3>{item.title}</h3>
-                {item.body ? <p className={styles.storyBody}>{item.body}</p> : null}
-                {item.links?.length ? (
-                  <div className={styles.placeLinks}>
-                    {item.links.map((link) => (
-                      <a
-                        key={`${item.id}-${link.url}`}
-                        href={link.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        {link.label} ↗
-                      </a>
-                    ))}
-                  </div>
-                ) : null}
-              </div>
+              {item.label ? <span className={styles.storyLabel}>{item.label}</span> : null}
+              <h3 className={styles.storyTitle}>{item.title}</h3>
+              {item.body ? <p className={styles.storyBody}>{item.body}</p> : null}
+              {item.links?.length ? (
+                <div className={styles.storyLinks}>
+                  {item.links.map((link) => (
+                    <a
+                      key={`${item.id}-${link.url}`}
+                      href={link.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      {link.label} →
+                    </a>
+                  ))}
+                </div>
+              ) : null}
             </article>
           ))}
         </div>
-      ) : null}
-
-      {!state.loading && !state.error && state.total > state.items.length ? (
-        <p className="small muted">
-          더 많은 스토리가 있어요. 현재 {state.items.length}개를 표시합니다.
-        </p>
       ) : null}
     </div>
   );

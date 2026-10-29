@@ -11,6 +11,9 @@ import styles from './CultureLife.module.css';
  *   alt?: string,
  *   credit?: string | null,
  *   badge?: string | null,
+ *   badgeTone?: 'light' | 'dark' | 'brand',
+ *   fit?: 'cover' | 'contain',
+ *   ratio?: 'poster' | 'wide' | 'story' | 'thumb',
  *   className?: string,
  * }} props
  */
@@ -19,41 +22,87 @@ export default function CultureMedia({
   alt = '',
   credit = null,
   badge = null,
+  badgeTone = 'light',
+  fit = 'cover',
+  ratio = 'poster',
   className = '',
 }) {
   const src = resolveCultureImageSrc(imagePath);
   const [failed, setFailed] = useState(false);
 
-  // URL이 바뀌면 이전 로드 실패 상태를 이어가지 않는다.
   useEffect(() => {
     setFailed(false);
   }, [src]);
 
   const showImage = Boolean(src) && !failed;
+  const frameClass = [
+    styles.mediaFrame,
+    ratio === 'wide' ? styles.mediaWide : null,
+    ratio === 'story' ? styles.mediaStory : null,
+    ratio === 'thumb' ? styles.mediaThumb : null,
+    ratio === 'poster' ? styles.mediaPoster : null,
+    className,
+  ].filter(Boolean).join(' ');
 
   return (
-    <figure className={`${styles.media} ${className}`.trim()}>
-      <div className={styles.mediaFrame}>
+    <figure className={styles.media}>
+      <div className={frameClass}>
         {showImage ? (
-          <img
-            src={src}
-            alt={alt}
-            className={styles.mediaImg}
-            onError={() => setFailed(true)}
-          />
+          fit === 'contain' ? (
+            <div className={styles.mediaContainWrap}>
+              <img
+                src={src}
+                alt=""
+                aria-hidden="true"
+                className={styles.mediaBlur}
+                onError={() => setFailed(true)}
+              />
+              <img
+                src={src}
+                alt={alt}
+                className={styles.mediaContain}
+                onError={() => setFailed(true)}
+              />
+            </div>
+          ) : (
+            <img
+              src={src}
+              alt={alt}
+              className={styles.mediaCover}
+              onError={() => setFailed(true)}
+            />
+          )
         ) : (
-          <div className={styles.mediaPlaceholder} aria-hidden={alt ? undefined : true} role={alt ? 'img' : undefined} aria-label={alt || undefined}>
-            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-              <rect x="3" y="5" width="18" height="14" rx="2" />
-              <circle cx="8.5" cy="10" r="1.5" />
-              <path d="m21 15-5-5L5 19" />
+          <div
+            className={styles.mediaPlaceholder}
+            aria-hidden={alt ? undefined : true}
+            role={alt ? 'img' : undefined}
+            aria-label={alt || undefined}
+          >
+            <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#A9C3EA" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="4" width="18" height="16" rx="2" />
+              <circle cx="9" cy="10" r="2" />
+              <path d="M21 17l-5-5-9 8" />
             </svg>
-            <span>이미지 준비 중</span>
           </div>
         )}
-        {badge ? <span className={styles.mediaBadge}>{badge}</span> : null}
+        {badge ? (
+          <span
+            className={
+              badgeTone === 'brand'
+                ? styles.mediaBadgeBrand
+                : badgeTone === 'dark'
+                  ? styles.mediaBadgeDark
+                  : styles.mediaBadgeLight
+            }
+          >
+            {badge}
+          </span>
+        ) : null}
+        {credit && showImage ? (
+          <span className={styles.mediaCreditOnImg}>{credit}</span>
+        ) : null}
       </div>
-      {credit ? <figcaption className={styles.mediaCredit}>{credit}</figcaption> : null}
     </figure>
   );
 }

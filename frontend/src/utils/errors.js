@@ -45,7 +45,10 @@ export function isApiError(err) {
 export function isAbortError(err) {
   if (!err) return false;
   if (isApiError(err) && err.kind === 'abort') return true;
-  return err.name === 'AbortError' || err.code === 20;
+  if (err.name === 'AbortError' || err.code === 20) return true;
+  // 일부 환경에서 abort가 TypeError("Failed to fetch") 등으로 보일 수 있음
+  const msg = typeof err.message === 'string' ? err.message : '';
+  return /abort(ed|ing)?|The user aborted|signal is aborted/i.test(msg);
 }
 
 /**
@@ -139,7 +142,8 @@ export function logApiError(context, err) {
       // code는 BE가 준 경우에만 (임의 생성 아님)
       code: isApiError(err) && err.code ? err.code : null,
     };
-    console.error('[api]', payload);
+    // Next overlay가 객체를 {} 로만 보여 문자열로 남긴다.
+    console.error(`[api] ${JSON.stringify(payload)}`);
   } catch {
     // ignore
   }

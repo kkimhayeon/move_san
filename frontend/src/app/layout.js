@@ -4,6 +4,7 @@ import Header from '@/components/layout/Header';
 import { AuthProvider } from '@/components/layout/AuthProvider';
 import Footer from '@/components/layout/Footer';
 import AiChat from '@/components/layout/AiChat';
+import ScrollToTop from '@/components/layout/ScrollToTop';
 import { SITE } from '@/constants/seo';
 
 const verification = {};
@@ -35,6 +36,7 @@ export default function RootLayout({ children }) {
         <Header />
         <main className="main">{children}</main>
         <Footer />
+        <ScrollToTop />
         <AiChat />
         </AuthProvider>
       </body>

@@ -69,6 +69,27 @@ export function formatCultureDateRange(start, end) {
   return null;
 }
 
+/** 카드 푸터용 짧은 일정 (~ 11.07) */
+export function formatCultureShortEnd(start, end) {
+  const e = parseYmd(end) || parseYmd(start);
+  if (!e) return null;
+  const sameStart = parseYmd(start);
+  if (sameStart && sameStart.y === e.y && sameStart.m === e.m && sameStart.d === e.d) {
+    return `${e.m}.${String(e.d).padStart(2, '0')}`;
+  }
+  return `~ ${e.m}.${String(e.d).padStart(2, '0')}`;
+}
+
+/**
+ * 카드 메타 한 줄: 일정 · 장소 · 구
+ * @param {{ start?: string|null, end?: string|null, place?: string|null, district?: string|null }} fields
+ */
+export function formatCultureCardMeta({ start, end, place, district }) {
+  const datePart = formatCultureShortEnd(start, end);
+  const placePart = [nullableText(place), nullableText(district)].filter(Boolean).join(' · ');
+  return [datePart, placePart].filter(Boolean).join(' · ') || null;
+}
+
 const SCHEDULE_LABELS = {
   upcoming: '예정',
   ongoing: '진행 중',
@@ -82,6 +103,17 @@ const SCHEDULE_LABELS = {
 export function scheduleStatusLabel(status) {
   const key = nullableText(status) || 'unknown';
   return SCHEDULE_LABELS[key] || SCHEDULE_LABELS.unknown;
+}
+
+/** 이미지 위 배지: badge_override 우선, 없으면 일정 상태 */
+export function eventImageBadge(event) {
+  const override = nullableText(event?.badge_override);
+  const status = nullableText(event?.schedule_status) || 'unknown';
+  if (override) {
+    if (status === 'ended') return scheduleStatusLabel('ended');
+    return override;
+  }
+  return scheduleStatusLabel(status);
 }
 
 /**
@@ -107,4 +139,23 @@ export function resolveCultureImageSrc(imagePath) {
   }
 
   return null;
+}
+
+/**
+ * 컬처라이프 화면 표시용 — 표시 가능한 image_path가 있는지.
+ * DB/RAG용 전체 데이터는 API에 그대로 두고, UI에서만 걸러 쓴다.
+ * @param {{ image_path?: string | null } | null | undefined} item
+ */
+export function hasCultureImage(item) {
+  return Boolean(resolveCultureImageSrc(item?.image_path));
+}
+
+/**
+ * @template {{ image_path?: string | null }} T
+ * @param {T[]} items
+ * @returns {T[]}
+ */
+export function filterCultureItemsWithImage(items) {
+  if (!Array.isArray(items)) return [];
+  return items.filter(hasCultureImage);
 }
