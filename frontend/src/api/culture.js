@@ -1,5 +1,6 @@
 // GET {API_BASE}/api/culture/events · /places · /articles (공개 조회, /api/v1 아님)
 import { API_BASE } from './client';
+import { withPublicCache } from '@/lib/publicCache';
 import {
   apiErrorFromCatch,
   apiErrorFromResponse,
@@ -9,6 +10,9 @@ import {
   logApiError,
 } from '@/utils/errors';
 import { nullableText, safeHttpUrl } from '@/utils/culture';
+
+/** 공개 문화 데이터 — 탭 재방문 시 재요청 완화 (2분) */
+const CULTURE_TTL_MS = 2 * 60 * 1000;
 
 function buildQuery(params) {
   const q = new URLSearchParams();
@@ -205,12 +209,20 @@ export async function fetchCultureEvents(params) {
     page: params.page ?? 1,
     page_size: params.page_size ?? 8,
   });
-  const data = await fetchCultureApi(`/api/culture/events${query}`, { signal: params.signal });
-  const page = normalizePageResult(data);
-  return {
-    ...page,
-    items: page.items.map(normalizeEvent).filter(Boolean),
-  };
+  const cacheKey = `culture:events${query}`;
+  return withPublicCache(
+    cacheKey,
+    CULTURE_TTL_MS,
+    async () => {
+      const data = await fetchCultureApi(`/api/culture/events${query}`);
+      const page = normalizePageResult(data);
+      return {
+        ...page,
+        items: page.items.map(normalizeEvent).filter(Boolean),
+      };
+    },
+    params.signal,
+  );
 }
 
 /**
@@ -222,12 +234,20 @@ export async function fetchCulturePlaces(params = {}) {
     page: params.page ?? 1,
     page_size: params.page_size ?? 50,
   });
-  const data = await fetchCultureApi(`/api/culture/places${query}`, { signal: params.signal });
-  const page = normalizePageResult(data);
-  return {
-    ...page,
-    items: page.items.map(normalizePlace).filter(Boolean),
-  };
+  const cacheKey = `culture:places${query}`;
+  return withPublicCache(
+    cacheKey,
+    CULTURE_TTL_MS,
+    async () => {
+      const data = await fetchCultureApi(`/api/culture/places${query}`);
+      const page = normalizePageResult(data);
+      return {
+        ...page,
+        items: page.items.map(normalizePlace).filter(Boolean),
+      };
+    },
+    params.signal,
+  );
 }
 
 /**
@@ -244,10 +264,18 @@ export async function fetchCultureArticles(params) {
     page: params.page ?? 1,
     page_size: params.page_size ?? 50,
   });
-  const data = await fetchCultureApi(`/api/culture/articles${query}`, { signal: params.signal });
-  const page = normalizePageResult(data);
-  return {
-    ...page,
-    items: page.items.map(normalizeArticle).filter(Boolean),
-  };
+  const cacheKey = `culture:articles${query}`;
+  return withPublicCache(
+    cacheKey,
+    CULTURE_TTL_MS,
+    async () => {
+      const data = await fetchCultureApi(`/api/culture/articles${query}`);
+      const page = normalizePageResult(data);
+      return {
+        ...page,
+        items: page.items.map(normalizeArticle).filter(Boolean),
+      };
+    },
+    params.signal,
+  );
 }

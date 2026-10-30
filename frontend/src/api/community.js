@@ -1,6 +1,10 @@
 // 커뮤니티 API — GET/POST/DELETE /api/v1/posts*, /api/v1/uploads/images, /api/v1/comments*
 import { apiFetch } from './client';
 import { BOARD_CODES } from '@/constants/community';
+import { withPublicCache } from '@/lib/publicCache';
+
+/** 게시판 카테고리(공개 목록) — is_author 등 사용자별 필드 없음 */
+const CATEGORIES_TTL_MS = 5 * 60 * 1000;
 
 /**
  * @typedef {{ nickname: string }} CommunityAuthor
@@ -47,12 +51,14 @@ function buildQuery(params) {
 
 /** 카테고리 목록. FE 노출용으로 BOARD_CODES만 남긴다. */
 export async function fetchPostCategories() {
-  const data = await apiFetch('/api/v1/posts/categories');
-  const items = Array.isArray(data?.result?.items) ? data.result.items : [];
-  const filtered = items
-    .filter((item) => item && BOARD_CODES.includes(String(item.code)))
-    .map((item) => ({ code: String(item.code), name: String(item.name || item.code) }));
-  return { ...data, result: { items: filtered } };
+  return withPublicCache('posts:categories', CATEGORIES_TTL_MS, async () => {
+    const data = await apiFetch('/api/v1/posts/categories');
+    const items = Array.isArray(data?.result?.items) ? data.result.items : [];
+    const filtered = items
+      .filter((item) => item && BOARD_CODES.includes(String(item.code)))
+      .map((item) => ({ code: String(item.code), name: String(item.name || item.code) }));
+    return { ...data, result: { items: filtered } };
+  });
 }
 
 /**

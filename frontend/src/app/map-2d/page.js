@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import Hero from '@/components/common/Hero';
 import BusanMap from '@/components/map/BusanMap';
 import { ROUTES } from '@/constants/routes';
@@ -20,9 +21,9 @@ export default function Map2DPage() {
         subtitle="3D 지도를 쓸 수 없어 간단한 지도로 보여드려요. 구·군을 누르면 월세와 동네 정보를 볼 수 있어요."
       />
       <p className="page" style={{ marginTop: -8, marginBottom: 8 }}>
-        <a href={ROUTES.map} className="btn-ghost" style={{ fontSize: 13 }}>
+        <Link href={ROUTES.map} className="btn-ghost" style={{ fontSize: 13 }}>
           ← 입체 지도 다시 시도
-        </a>
+        </Link>
       </p>
       <BusanMap />
     </>

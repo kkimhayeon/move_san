@@ -5,15 +5,12 @@ export const ROUTES = {
   map: '/map',
   /** WebGL 불가·3D 오류 시 쓰는 2D 폴백 (내비·검색 미노출) */
   map2d: '/map-2d',
-  /** 예전 테스트 경로. /map 으로 리다이렉트 */
-  map3d: '/map-3d',
   culture: '/culture',
   community: '/community',
   communityWrite: '/community/write',
   communityPost: (id) => `/community/${id}`,
   login: '/login',
   signup: '/signup',
-  rentTest: '/rent-test',
 };
 
 export const NAV = [
@@ -37,8 +34,6 @@ export const NOINDEX_PATHS = [
   ROUTES.result,
   ROUTES.login,
   ROUTES.signup,
-  ROUTES.rentTest,
   ROUTES.map2d,
-  ROUTES.map3d,
   ROUTES.communityWrite,
 ];

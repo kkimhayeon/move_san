@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import dynamic from 'next/dynamic';
 import {
   COVER_SLIDES,
   CULTURE_DEFAULT_TAB,
@@ -9,10 +10,17 @@ import {
 } from '@/constants/culture';
 import Hero from '@/components/common/Hero';
 import { safeHttpUrl } from '@/utils/culture';
-import MeetTab from './MeetTab';
-import OpenTab from './OpenTab';
-import StayTab from './StayTab';
 import styles from './CultureLife.module.css';
+
+const OpenTab = dynamic(() => import('./OpenTab'), {
+  loading: () => <p className="muted small">행사 정보를 불러오는 중…</p>,
+});
+const StayTab = dynamic(() => import('./StayTab'), {
+  loading: () => <p className="muted small">머무르기 정보를 불러오는 중…</p>,
+});
+const MeetTab = dynamic(() => import('./MeetTab'), {
+  loading: () => <p className="muted small">만나기 정보를 불러오는 중…</p>,
+});
 
 export default function CultureLife() {
   const [tab, setTab] = useState(CULTURE_DEFAULT_TAB);

@@ -45,8 +45,10 @@ export async function apiFetch(path, options = {}) {
 
   let response;
   try {
+    // 사용자별 필드(is_author 등)가 섞일 수 있어 브라우저 HTTP 캐시 금지
     response = await fetch(`${API_BASE}${path}`, {
       ...options,
+      cache: options.cache ?? 'no-store',
       headers,
     });
   } catch (cause) {

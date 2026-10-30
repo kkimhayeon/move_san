@@ -3,9 +3,13 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import Hero from '@/components/common/Hero';
+import RouteLoading from '@/components/common/RouteLoading';
 import { BENEFITS } from '@/constants/benefits';
 import { ROUTES } from '@/constants/routes';
-import { useComparisonResult } from '@/stores/comparison';
+import {
+  useComparisonResult,
+  useComparisonStatus,
+} from '@/stores/comparison';
 import { fmt, fmtInt, signedInt } from '@/utils/formatMoney';
 import ComparisonChart from './ComparisonChart';
 import ComparisonTable from './ComparisonTable';
@@ -29,10 +33,39 @@ function IncompleteResult() {
   );
 }
 
+function CompareError({ message }) {
+  return (
+    <>
+      <Hero compact eyebrow="RESULT" title="계산 결과" subtitle="결과를 불러오지 못했어요." />
+      <div className="page">
+        <div className={`card stack ${styles.emptyCard}`}>
+          <h2>계산에 실패했어요</h2>
+          <p className={`muted ${styles.flush}`} role="alert">{message}</p>
+          <Link href={ROUTES.home} className={`btn ${styles.emptyAction}`}>계산기로 돌아가기 →</Link>
+        </div>
+      </div>
+    </>
+  );
+}
+
 export default function ComparisonResult() {
   const apiResult = useComparisonResult();
+  const { status, error } = useComparisonStatus();
   const [chart, setChart] = useState('all');
   const [livingOpen, setLivingOpen] = useState(false);
+
+  if (status === 'loading') {
+    return (
+      <>
+        <Hero compact eyebrow="RESULT" title="계산 결과" subtitle="생활비를 비교하고 있어요." />
+        <RouteLoading label="계산 결과를 불러오는 중…" />
+      </>
+    );
+  }
+
+  if (status === 'error') {
+    return <CompareError message={error || '생활비 계산에 실패했어요. 잠시 후 다시 시도해 주세요.'} />;
+  }
 
   if (!apiResult) return <IncompleteResult />;
 

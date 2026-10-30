@@ -28,9 +28,6 @@ npm run dev
 | `/culture` | 컬처라이프 (열린다·머문다·만난다). 검색 노출 | — |
 | `/community` | 커뮤니티 (예시 글). 검색 노출 | P2 |
 | `/login` | 로그인·회원가입 자리 (Supabase Auth 검토 중). noindex | — |
-| `/rent-test` | Flask `GET /api/rent` 연동 테스트. noindex | — |
-
-`/start`는 예전 주소라 `/`로 이동시켜요.
 
 ## 로고
 
@@ -46,7 +43,7 @@ npm run dev
 |---|---|
 | `src/app/` | 주소와 검색용 정보. 페이지는 레이아웃과 `metadata`만 두고, 입력·클릭은 컴포넌트로 넘깁니다. |
 | `src/components/` | 화면 UI. 기능별로 `common`, `layout`, `comparison`, `policy`, `community`, `map`. |
-| `src/api/` | Flask 요청. 주소는 `client.js` 한곳, 기능마다 파일 하나 (`rent.js`, `comparison.js`, `chat.js`). |
+| `src/api/` | Flask 요청. 주소는 `client.js` 한곳, 기능마다 파일 하나 (`housing.js`, `comparison.js`, `community.js` 등). |
 | `src/stores/` | 화면을 넘어 공유하는 상태. 지금은 계산기 입력만 `comparison.js` (Zustand, `sessionStorage` 키 `busansallim-inputs`). |
 | `src/constants/` | 경로, SEO 기본값, 나중에 실제 데이터로 바꿀 예시 목록. |
 | `src/utils/` | 계산식, 금액 표시, API가 없을 때의 챗봇 답변, 메타데이터 도우미. |
@@ -103,8 +100,7 @@ NEXT_PUBLIC_API_URL=http://localhost:5000
 ```
 
 - `GET /api/rent` (팀 합의 규격) → `[{ "region_code": "26350", "region_name": "해운대구", "median_rent": 62 }, ...]` (월세 단위: 만원)
-  - 연동 테스트 화면: `http://localhost:3001/rent-test` (로딩·오류·성공 상태 표시, [다시 불러오기] 버튼)
-  - 동네 지도(`/map`)도 같은 API를 써서, 받은 구만 DB 값으로 바꿔 보여줌
+  - 동네 지도(`/map`)는 주거 API를 써서 구·군 월세를 보여줌
 - Flask CORS 허용 주소: `http://localhost:3001` (3000 포트가 사용 중이면 Next.js가 3001로 뜸 — 둘 다 허용 추천)
 - `POST /api/chat` — AI 챗봇. body: `{ messages: [{ role, content }], context: { 계산기 입력값 } }` → `{ reply: "답변" }`. Flask에서 LLM API(OpenAI·Claude 등)를 호출해 답하면 됨. 없으면 `src/utils/chatbot.js`의 규칙 기반 데모 답변 사용
 - `POST /api/compare` — 계산 API (규격 미정, 없으면 프론트 계산식 사용)

@@ -3,8 +3,9 @@ import { ComparisonHydration } from '@/stores/comparison';
 import Header from '@/components/layout/Header';
 import { AuthProvider } from '@/components/layout/AuthProvider';
 import Footer from '@/components/layout/Footer';
-import AiChat from '@/components/layout/AiChat';
+import AiChatLazy from '@/components/layout/AiChatLazy';
 import ScrollToTop from '@/components/layout/ScrollToTop';
+import NavigationProgress from '@/components/layout/NavigationProgress';
 import { SITE } from '@/constants/seo';
 
 const verification = {};
@@ -33,11 +34,12 @@ export default function RootLayout({ children }) {
       <body>
         <AuthProvider>
         <ComparisonHydration />
+        <NavigationProgress />
         <Header />
         <main className="main">{children}</main>
         <Footer />
         <ScrollToTop />
-        <AiChat />
+        <AiChatLazy />
         </AuthProvider>
       </body>
     </html>

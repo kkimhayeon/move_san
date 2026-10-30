@@ -1,5 +1,5 @@
 import Hero from '@/components/common/Hero';
-import BusanMap3D from '@/components/map3d/BusanMap3D';
+import BusanMap3DLazy from '@/components/map3d/BusanMap3DLazy';
 import { ROUTES } from '@/constants/routes';
 import { pageMeta } from '@/utils/seo';
 
@@ -18,7 +18,7 @@ export default function MapPage() {
         title={<>부산 라이프<br /><em>어디서 시작할까?</em></>}
         subtitle="지역을 눌러서 확인해보세요!"
       />
-      <BusanMap3D />
+      <BusanMap3DLazy />
     </>
   );
 }

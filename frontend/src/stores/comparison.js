@@ -60,15 +60,22 @@ function readSavedInputs() {
 export const useComparisonStore = create((set) => ({
   inputs: { ...EMPTY },
   result: null,
+  /** idle | loading | ready | error */
+  status: 'idle',
+  error: null,
   loaded: false,
   setField: (key, value) => set((state) => ({
     inputs: { ...state.inputs, [key]: value },
     result: null,
+    status: 'idle',
+    error: null,
   })),
-  setInputs: (inputs) => set({ inputs, result: null }),
-  setResult: (result) => set({ result }),
-  clearResult: () => set({ result: null }),
-  reset: () => set({ inputs: { ...EMPTY }, result: null }),
+  setInputs: (inputs) => set({ inputs, result: null, status: 'idle', error: null }),
+  beginCompare: () => set({ result: null, status: 'loading', error: null }),
+  setResult: (result) => set({ result, status: 'ready', error: null }),
+  setCompareError: (error) => set({ result: null, status: 'error', error }),
+  clearResult: () => set({ result: null, status: 'idle', error: null }),
+  reset: () => set({ inputs: { ...EMPTY }, result: null, status: 'idle', error: null }),
   hydrate: () => set({ inputs: readSavedInputs(), loaded: true }),
 }));
 
@@ -90,7 +97,9 @@ export function useComparisonInputs() {
     inputs: state.inputs,
     setField: state.setField,
     setInputs: state.setInputs,
+    beginCompare: state.beginCompare,
     setResult: state.setResult,
+    setCompareError: state.setCompareError,
     clearResult: state.clearResult,
     reset: state.reset,
   })));
@@ -98,6 +107,13 @@ export function useComparisonInputs() {
 
 export function useComparisonResult() {
   return useComparisonStore((state) => state.result);
+}
+
+export function useComparisonStatus() {
+  return useComparisonStore(useShallow((state) => ({
+    status: state.status,
+    error: state.error,
+  })));
 }
 
 export function useNumbers() {

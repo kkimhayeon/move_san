@@ -1,5 +1,6 @@
 // GET {API_BASE}/api/policies · /api/policies/categories (인증 불필요, /api/v1 아님)
 import { API_BASE } from './client';
+import { withPublicCache } from '@/lib/publicCache';
 import {
   apiErrorFromCatch,
   apiErrorFromResponse,
@@ -8,6 +9,9 @@ import {
   isApiError,
   logApiError,
 } from '@/utils/errors';
+
+/** 공개 혜택 데이터 — 필터 전환·재방문 완화 (3분) */
+const POLICIES_TTL_MS = 3 * 60 * 1000;
 
 /**
  * @typedef {{
@@ -128,18 +132,26 @@ export async function fetchPolicies(params = {}) {
     category: params.category,
     q: params.q,
   });
-  const data = await fetchPoliciesApi(`/api/policies${query}`, { signal: params.signal });
-  const result = data?.result;
-  if (!result || typeof result !== 'object' || !Array.isArray(result.items)) {
-    throw createApiError({ kind: 'parse' });
-  }
+  const cacheKey = `policies:list${query}`;
+  return withPublicCache(
+    cacheKey,
+    POLICIES_TTL_MS,
+    async () => {
+      const data = await fetchPoliciesApi(`/api/policies${query}`);
+      const result = data?.result;
+      if (!result || typeof result !== 'object' || !Array.isArray(result.items)) {
+        throw createApiError({ kind: 'parse' });
+      }
 
-  const items = result.items.map(normalizePolicy).filter(Boolean);
-  const total = Number(result.total);
-  return {
-    items,
-    total: Number.isFinite(total) ? total : items.length,
-  };
+      const items = result.items.map(normalizePolicy).filter(Boolean);
+      const total = Number(result.total);
+      return {
+        items,
+        total: Number.isFinite(total) ? total : items.length,
+      };
+    },
+    params.signal,
+  );
 }
 
 /**
@@ -148,14 +160,21 @@ export async function fetchPolicies(params = {}) {
  * @returns {Promise<string[]>}
  */
 export async function fetchPolicyCategories(options = {}) {
-  const data = await fetchPoliciesApi('/api/policies/categories', { signal: options.signal });
-  const categories = data?.result?.categories;
-  if (!Array.isArray(categories)) {
-    throw createApiError({ kind: 'parse' });
-  }
-  return categories
-    .map((item) => nullableText(item))
-    .filter(Boolean);
+  return withPublicCache(
+    'policies:categories',
+    POLICIES_TTL_MS,
+    async () => {
+      const data = await fetchPoliciesApi('/api/policies/categories');
+      const categories = data?.result?.categories;
+      if (!Array.isArray(categories)) {
+        throw createApiError({ kind: 'parse' });
+      }
+      return categories
+        .map((item) => nullableText(item))
+        .filter(Boolean);
+    },
+    options.signal,
+  );
 }
 
 /**

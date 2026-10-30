@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import { fetchComparison, toComparisonBody } from '@/api/comparison';
 import { ROUTES } from '@/constants/routes';
@@ -13,8 +14,11 @@ import { 물가비율, 부산물가절감률 } from '@/utils/calc';
 import { getUserErrorMessage, isAbortError } from '@/utils/errors';
 import { sanitizeMoney } from '@/utils/moneyInput';
 import { BUSAN_FIELDS, FieldIcon, SEOUL_FIELDS } from './fields';
-import MapRentPickerModal from './MapRentPickerModal';
 import styles from './ComparisonForm.module.css';
+
+const MapRentPickerModal = dynamic(() => import('./MapRentPickerModal'), {
+  ssr: false,
+});
 
 function placeholderFor(field, inputs) {
   if (field.mirror && inputs[field.mirror]) {
@@ -104,8 +108,14 @@ function CityColumn({ title, description, fields, busan, ...fieldProps }) {
 
 export default function ComparisonForm() {
   const router = useRouter();
-  const { inputs, setField, setResult, clearResult, reset } =
-    useComparisonInputs();
+  const {
+    inputs,
+    setField,
+    beginCompare,
+    setResult,
+    setCompareError,
+    reset,
+  } = useComparisonInputs();
   const { values, missing, complete } = useNumbers();
 
   const [tried, setTried] = useState(false);
@@ -131,16 +141,22 @@ export default function ComparisonForm() {
 
     if (!complete || loading) return;
 
-    clearResult();
+    // 화면은 즉시 전환하고, API는 결과 페이지에서 스켈레톤으로 대기
+    beginCompare();
     setLoading(true);
+    router.push(ROUTES.result);
 
     try {
       const data = await fetchComparison(toComparisonBody(values));
       setResult(data.result);
-      router.push(ROUTES.result);
     } catch (err) {
       if (!isAbortError(err)) {
-        setError(getUserErrorMessage(err, '생활비 계산에 실패했어요. 잠시 후 다시 시도해 주세요.'));
+        const message = getUserErrorMessage(
+          err,
+          '생활비 계산에 실패했어요. 잠시 후 다시 시도해 주세요.',
+        );
+        setCompareError(message);
+        setError(message);
       }
     } finally {
       setLoading(false);
@@ -222,14 +238,16 @@ export default function ComparisonForm() {
         </form>
       </section>
 
-      <MapRentPickerModal
-        open={mapOpen}
-        onClose={() => setMapOpen(false)}
-        onApply={(rent) => {
-          setError(null);
-          setField('busanRent', rent);
-        }}
-      />
+      {mapOpen ? (
+        <MapRentPickerModal
+          open
+          onClose={() => setMapOpen(false)}
+          onApply={(rent) => {
+            setError(null);
+            setField('busanRent', rent);
+          }}
+        />
+      ) : null}
     </>
   );
 }

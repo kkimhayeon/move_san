@@ -1,5 +1,6 @@
 // GET {API_BASE}/api/v1/housing/districts · /api/v1/housing/rankings
 import { API_BASE } from './client';
+import { withPublicCache } from '@/lib/publicCache';
 import {
   apiErrorFromCatch,
   apiErrorFromResponse,
@@ -8,6 +9,9 @@ import {
   isApiError,
   logApiError,
 } from '@/utils/errors';
+
+/** 공개 월세 데이터 — 재방문·지도/모달 중복 호출 완화 (5분) */
+const HOUSING_TTL_MS = 5 * 60 * 1000;
 
 function normalizeItem(raw) {
   if (!raw || typeof raw !== 'object') return null;
@@ -80,10 +84,19 @@ async function fetchHousing(path) {
 
 /** 구·군별 월세 중앙값 전체 목록 */
 export function fetchHousingDistricts() {
-  return fetchHousing('/api/v1/housing/districts');
+  return withPublicCache(
+    'housing:districts',
+    HOUSING_TTL_MS,
+    () => fetchHousing('/api/v1/housing/districts'),
+  );
 }
 
 /** 월세 낮은 구·군 순위 (API 반환 순서 유지) */
 export function fetchHousingRankings(limit = 5) {
-  return fetchHousing(`/api/v1/housing/rankings?limit=${encodeURIComponent(limit)}`);
+  const path = `/api/v1/housing/rankings?limit=${encodeURIComponent(limit)}`;
+  return withPublicCache(
+    `housing:rankings:${limit}`,
+    HOUSING_TTL_MS,
+    () => fetchHousing(path),
+  );
 }
