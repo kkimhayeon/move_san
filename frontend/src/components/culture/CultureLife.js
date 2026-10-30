@@ -7,6 +7,7 @@ import {
   CULTURE_TABS,
   PROMO_BANNER,
 } from '@/constants/culture';
+import Hero from '@/components/common/Hero';
 import { safeHttpUrl } from '@/utils/culture';
 import MeetTab from './MeetTab';
 import OpenTab from './OpenTab';
@@ -51,38 +52,15 @@ export default function CultureLife() {
   const coverHref = safeHttpUrl(current?.url);
 
   return (
-    <div className={styles.pageRoot}>
-      <section className={styles.hero} aria-label="컬처라이프 소개">
-        <svg
-          aria-hidden="true"
-          viewBox="0 0 640 260"
-          preserveAspectRatio="xMaxYMax meet"
-          className={styles.heroBridge}
-          fill="none"
-          stroke="#A9C3EA"
-          strokeWidth="3"
-          strokeLinecap="round"
-        >
-          <path d="M60 210 H640" strokeWidth="5" stroke="#FFFFFF" />
-          <path d="M190 20 V230 M440 20 V230" strokeWidth="12" stroke="#FFFFFF" />
-          <path d="M190 20 V230 M440 20 V230" strokeWidth="2" />
-          <path d="M0 170 Q100 170 190 28 Q315 200 440 28 Q520 160 640 162" />
-          <path d="M220 52 V210 M250 84 V210 M280 110 V210 M315 126 V210 M350 110 V210 M380 84 V210 M410 52 V210 M470 58 V210 M510 92 V210 M550 118 V210 M590 136 V210" strokeWidth="1.6" />
-        </svg>
-        <div className={styles.heroInner}>
-          <span className={styles.heroEyebrow}>MOVESAN · 컬처라이프</span>
-          <h1 className={styles.heroTitle}>
-            LIVE LOCAL,
-            <br />
-            <span>FEEL BUSAN</span>
-          </h1>
-          <p className={styles.heroSub}>
-            이사를 결정하기 전에, <strong>부산에서의 하루</strong>를 먼저 살아보세요.
-          </p>
-        </div>
-      </section>
-
-      <div className={styles.main}>
+    <>
+      <Hero
+        compact
+        eyebrow="MOVESAN · CULTURE"
+        title={<>LIVE LOCAL,<br /><em>FEEL BUSAN</em></>}
+        subtitle={<>이사를 결정하기 전에, <strong>부산에서의 하루</strong>를 먼저 살아보세요.</>}
+      />
+      <div className={styles.pageRoot}>
+      <div className={`${styles.main} lift`}>
         <section className={styles.cover} aria-label="커버 스토리">
           {coverHref ? (
             <a
@@ -201,7 +179,8 @@ export default function CultureLife() {
           );
         })}
       </div>
-    </div>
+      </div>
+    </>
   );
 }
 

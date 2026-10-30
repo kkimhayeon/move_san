@@ -7,55 +7,9 @@
   color: #0F172A;
 }
 
-/* Hero */
-.hero {
-  position: relative;
-  overflow: hidden;
-  background: linear-gradient(180deg, #F5F9FF 0%, #EAF2FD 58%, #BFD5F5 58%, #D6E5F9 78%, #F2F6FC 100%);
-}
-.heroBridge {
-  position: absolute;
-  right: 0;
-  bottom: 18%;
-  width: min(58%, 700px);
-  height: auto;
-  pointer-events: none;
-}
-.heroInner {
-  position: relative;
-  max-width: 1120px;
-  margin: 0 auto;
-  padding: 52px 24px 150px;
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-.heroEyebrow {
-  font-size: 12px;
-  font-weight: 800;
-  letter-spacing: 0.14em;
-  color: #2563EB;
-}
-.heroTitle {
-  margin: 0;
-  font-size: clamp(40px, 5.6vw, 64px);
-  line-height: 1.12;
-  font-weight: 900;
-  letter-spacing: -0.04em;
-  color: #0F172A;
-}
-.heroTitle span { color: #2563EB; }
-.heroSub {
-  margin: 0;
-  font-size: 16px;
-  line-height: 1.7;
-  color: #334155;
-}
-.heroSub strong { color: #0F172A; }
-
 .main {
   max-width: 1120px;
-  margin: -112px auto 0;
+  margin: 0 auto;
   padding: 0 24px 64px;
   position: relative;
   display: flex;
@@ -1043,8 +997,7 @@
 }
 
 @media (max-width: 900px) {
-  .heroInner { padding: 36px 20px 120px; }
-  .main { margin-top: -80px; padding: 0 16px 48px; }
+  .main { padding: 0 16px 48px; }
   .sectionCard { padding: 22px 18px 28px; }
   .cover { padding: 16px; gap: 18px; }
   .bigTabs { gap: 22px; padding: 8px 0; }
@@ -1055,7 +1008,6 @@
 }
 
 @media (max-width: 720px) {
-  .heroTitle { font-size: 34px; }
   .sectionIntro h2 { font-size: 22px; }
   .eventGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px 12px; }
   .storyTitle { font-size: 18px; }

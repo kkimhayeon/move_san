@@ -208,7 +208,7 @@ export default function BusanMap() {
       <div className={`${styles.layout} lift`}>
         <section className="card">
           <div className={styles.toolbar}>
-            <h2>구·군별 월세 중앙값</h2>
+            <h2>부산 라이프 지도</h2>
           </div>
           <div className={styles.wrap}>
             <svg viewBox={`0 0 1000 ${MAP_HEIGHT}`} role="img" aria-label="부산 구·군별 월세 지도">

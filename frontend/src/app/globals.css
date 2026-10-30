@@ -31,7 +31,8 @@ h1, h2, h3 { margin: 0; letter-spacing: -0.02em; }
 /* 여러 화면이 같이 쓰는 틀 */
 .main { min-height: calc(100vh - 160px); }
 .page { max-width: 1200px; margin: 0 auto; padding: 0 24px 64px; }
-.lift { position: relative; margin-top: -84px; }
+/* Hero(다리·바다)와 카드가 겹치지 않도록 아래로 내림 */
+.lift { position: relative; margin-top: 28px; }
 .section { margin-top: 28px; }
 .section-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 14px; flex-wrap: wrap; }
 .section-head h2 { font-size: 21px; }

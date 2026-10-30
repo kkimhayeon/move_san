@@ -282,22 +282,68 @@
 }
 
 .lmBlock {
-  border-radius: 14px;
-  background: #f6f8fb;
-  padding: 14px 16px;
+  border-radius: 16px;
+  background: var(--brand-soft);
+  border: 1px solid var(--brand-line);
+  padding: 18px 16px;
 }
 
-.lmBlock strong {
+.lmEyebrow {
   display: block;
-  font-size: 16px;
-  margin-bottom: 4px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--brand);
+  margin-bottom: 6px;
+}
+
+.lmName {
+  display: block;
+  margin: 0 0 10px;
+  font-size: 26px;
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  line-height: 1.25;
+  color: var(--ink);
 }
 
 .lmBlock p {
   margin: 0;
-  font-size: 13px;
+  font-size: 14px;
   color: var(--sub);
-  line-height: 1.55;
+  line-height: 1.65;
+  word-break: keep-all;
+  overflow-wrap: break-word;
+  white-space: pre-line;
+}
+
+.rentCompact {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  border-radius: 14px;
+  background: #f6f8fb;
+  padding: 12px 14px;
+}
+
+.rentValue {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--ink);
+  letter-spacing: -0.02em;
+}
+
+.rentValue small {
+  font-size: 13px;
+  font-weight: 700;
+  margin-left: 2px;
+  color: var(--sub);
+}
+
+.rentHint {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--sub);
 }
 
 .chips {

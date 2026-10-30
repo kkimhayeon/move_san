@@ -15,8 +15,8 @@ export default function MapPage() {
       <Hero
         compact
         eyebrow="NEIGHBORHOOD MAP"
-        title={<>부산 16개 동네,<br /><em>입체 지도로</em></>}
-        subtitle="블록이 높고 진할수록 월세가 비싸요. 구·군을 누르면 랜드마크가 세워져요."
+        title={<>부산 라이프<br /><em>어디서 시작할까?</em></>}
+        subtitle="지역을 눌러서 확인해보세요!"
       />
       <BusanMap3D />
     </>

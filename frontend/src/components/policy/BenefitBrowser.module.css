@@ -30,7 +30,7 @@
   box-shadow: var(--shadow);
 }
 .top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-.body { display: flex; flex-direction: column; gap: 8px; min-height: 0; flex: 1; }
+.body { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
 .card h3 {
   margin: 0;
   flex: 1;
@@ -66,7 +66,7 @@
 }
 .field b { color: var(--ink); font-weight: 700; }
 .field span { min-width: 0; color: var(--sub); word-break: break-word; }
-.card :global(.btn-sm) { align-self: flex-start; margin-top: auto; }
+.card :global(.btn-sm) { align-self: flex-start; }
 .thumb { flex: none; display: grid; place-items: center; border-radius: 14px; background: linear-gradient(135deg, #9cc8ff, #4f86e8); }
 .statusBox { padding: 18px; }
 

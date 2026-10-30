@@ -2,6 +2,7 @@ import Hero from '@/components/common/Hero';
 import BenefitBrowser from '@/components/policy/BenefitBrowser';
 import { ROUTES } from '@/constants/routes';
 import { pageMeta } from '@/utils/seo';
+import styles from './benefits.module.css';
 
 export const metadata = pageMeta({
   title: '청년 혜택',
@@ -20,7 +21,7 @@ export default function BenefitsPage() {
       />
       
       <div className="page">
-        <div className="lift stack" style={{ gap: 36 }}>
+        <div className={`lift stack ${styles.lift}`} style={{ gap: 36 }}>
           <BenefitBrowser />
         </div>
       </div>

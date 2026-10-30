@@ -14,9 +14,8 @@ import {
 } from '@/constants/map3d';
 import { ROUTES } from '@/constants/routes';
 import { DISTRICTS, MISSING_FILL, RENT_FILL } from '@/data/map3d/districts';
-import { useComparisonInputs, useNumbers } from '@/stores/comparison';
+import { useComparisonInputs } from '@/stores/comparison';
 import { getUserErrorMessage, isAbortError } from '@/utils/errors';
-import { signed } from '@/utils/formatMoney';
 import Map3DCanvas from './Map3DCanvas';
 import styles from './BusanMap3D.module.css';
 
@@ -28,22 +27,10 @@ const BINS = [
   { max: Infinity, color: RENT_FILL[4] },
 ];
 
-function median(arr) {
-  if (!arr.length) return null;
-  const s = [...arr].sort((a, b) => a - b);
-  const m = Math.floor(s.length / 2);
-  return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
-}
-
 function formatRentDisplay(value) {
   if (value == null || !Number.isFinite(Number(value))) return null;
   const rounded = Math.round(Number(value) * 100) / 100;
   return rounded.toLocaleString('ko-KR', { maximumFractionDigits: 2, minimumFractionDigits: 0 });
-}
-
-function formatCount(value) {
-  if (value == null || !Number.isFinite(Number(value))) return null;
-  return `${Number(value).toLocaleString('ko-KR')}건`;
 }
 
 function formatPeriodMonth(iso) {
@@ -79,7 +66,6 @@ function rentLabel(rent) {
 export default function BusanMap3D() {
   const router = useRouter();
   const { setField } = useComparisonInputs();
-  const { values } = useNumbers();
 
   /** 영문 ID. null = 전체 보기 */
   const [selectedId, setSelectedId] = useState(null);
@@ -197,18 +183,6 @@ export default function BusanMap3D() {
   const selRent = selData?.median_rent ?? null;
   const selCount = selData?.sample_count ?? null;
   const districtInfo = selectedId ? DISTRICTS[selectedId] : null;
-
-  const availableRents = MAP3D_REGIONS
-    .map((r) => rentsById[r.id])
-    .filter((v) => v != null && Number.isFinite(v));
-  const districtMedianOfMedians = median(availableRents);
-  const vsDistricts = selRent != null && districtMedianOfMedians != null
-    ? selRent - districtMedianOfMedians
-    : null;
-  const seoulRent = values.seoulRent;
-  const save = selRent != null && seoulRent != null && !Number.isNaN(seoulRent)
-    ? seoulRent - selRent
-    : null;
   const top5Max = Math.max(0, ...rankings.items.map((item) => (item.median_rent == null ? 0 : item.median_rent)));
   const criteria = metadataLines(districts.metadata);
 
@@ -223,7 +197,7 @@ export default function BusanMap3D() {
       <div className={`${styles.layout} lift`}>
         <section className="card">
           <div className={styles.toolbar}>
-            <h2>구·군별 월세 중앙값</h2>
+            <h2>어디로 가볼까?</h2>
           </div>
 
           <div className={styles.stage}>
@@ -303,25 +277,9 @@ export default function BusanMap3D() {
                 <div>
                   <div style={{ fontSize: 22, fontWeight: 800 }}>부산 16개 구·군</div>
                   <p className={styles.guide} style={{ marginTop: 10 }}>
-                    지도에서 구·군을 누르거나 아래 TOP 5·바로가기로 동네를 골라 보세요.
-                    선택하면 카메라가 이동하고 랜드마크가 나타나요.
+                    지도에서 구·군을 누르면 그 동네를 대표하는 랜드마크가 나타나요.
+                    아래에서 바로가기로도 골라 볼 수 있어요.
                   </p>
-                </div>
-                <div className={styles.statGrid}>
-                  <div className={styles.stat}>
-                    <span className="small muted">구·군 중앙값의 중앙값</span>
-                    <b>
-                      {districts.loading
-                        ? '불러오는 중…'
-                        : districtMedianOfMedians == null
-                          ? '자료 없음'
-                          : `${formatRentDisplay(districtMedianOfMedians)}만원`}
-                    </b>
-                  </div>
-                  <div className={styles.stat}>
-                    <span className="small muted">자료 있는 구·군</span>
-                    <b>{districts.loading ? '…' : `${availableRents.length}곳`}</b>
-                  </div>
                 </div>
                 <div className={styles.chips}>
                   {CHIP_ORDER.map((id) => (
@@ -333,67 +291,42 @@ export default function BusanMap3D() {
               </>
             ) : (
               <>
-                <span className="tag" style={{ alignSelf: 'flex-start' }}>선택한 동네</span>
-                <div>
-                  <div style={{ fontSize: 22, fontWeight: 800 }}>부산 {selectedName}</div>
-                  <div className="small muted">월세 중앙값 (소수 첫째 자리에서 반올림한 값입니다)</div>
-                  {districts.loading ? (
-                    <div className="small muted" style={{ marginTop: 8 }}>불러오는 중…</div>
-                  ) : districts.error ? (
-                    <div className="small bad" style={{ marginTop: 8 }}>데이터를 불러오지 못했어요.</div>
-                  ) : selRent == null ? (
-                    <div className={styles.panelBig} style={{ fontSize: 28 }}>자료 없음</div>
-                  ) : (
-                    <div className={styles.panelBig}>
-                      {Math.round(selRent).toLocaleString('ko-KR')}
-                      <small>만원</small>
-                    </div>
-                  )}
-                  {!districts.loading && !districts.error && selCount != null && (
-                    <div className="small muted">거래 {formatCount(selCount)} 기준</div>
-                  )}
-                </div>
+                <span className="tag" style={{ alignSelf: 'flex-start' }}>부산 {selectedName}</span>
 
-                {districtInfo && (
+                {districtInfo ? (
                   <div className={styles.lmBlock}>
-                    <strong>{districtInfo.lm}</strong>
+                    <span className={styles.lmEyebrow}>이 동네 랜드마크</span>
+                    <strong className={styles.lmName}>{districtInfo.lm}</strong>
                     <p>{districtInfo.desc}</p>
                   </div>
-                )}
-
-                <div className={styles.statGrid}>
-                  <div className={styles.stat}>
-                    <span className="small muted">구·군 중앙값의 중앙값</span>
-                    <b>
-                      {districtMedianOfMedians == null
-                        ? '자료 없음'
-                        : `${formatRentDisplay(districtMedianOfMedians)}만원`}
-                    </b>
-                  </div>
-                  <div className={styles.stat}>
-                    <span className="small muted">구·군 중앙값 대비</span>
-                    <b className={vsDistricts == null ? undefined : vsDistricts > 0 ? 'bad' : 'good'}>
-                      {vsDistricts == null ? '자료 없음' : `${signed(vsDistricts)}만원`}
-                    </b>
-                  </div>
-                </div>
-
-                {save != null ? (
-                  <div className={styles.save}>
-                    내 서울 월세 <b>{formatRentDisplay(seoulRent)}만원</b>과 비교하면
-                    <br />
-                    {save >= 0
-                      ? <>월 <b>{formatRentDisplay(save)}만원</b> · 1년 <b>{formatRentDisplay(save * 12)}만원</b> 절약</>
-                      : <>월 <b className="bad">{formatRentDisplay(-save)}만원</b> 더 비싸요</>}
-                  </div>
                 ) : (
-                  <div className={styles.save}>계산기에 서울 월세를 넣으면 얼마나 아낄 수 있는지 보여드려요.</div>
+                  <div style={{ fontSize: 22, fontWeight: 800 }}>부산 {selectedName}</div>
                 )}
+
+                <div className={styles.rentCompact}>
+                  {districts.loading ? (
+                    <span className="small muted">불러오는 중…</span>
+                  ) : districts.error ? (
+                    <span className="small bad">불러오기 실패</span>
+                  ) : selRent == null ? (
+                    <b className={styles.rentValue}>자료 없음</b>
+                  ) : (
+                    <b className={styles.rentValue}>
+                      {Math.round(selRent).toLocaleString('ko-KR')}
+                      <small>만원</small>
+                    </b>
+                  )}
+                  <span className={styles.rentHint}>
+                    {selCount != null && Number.isFinite(Number(selCount))
+                      ? `${Number(selCount).toLocaleString('ko-KR')}건중 중앙값`
+                      : '중앙값'}
+                  </span>
+                </div>
 
                 <button
                   type="button"
-                  className="btn btn-grad"
-                  style={{ minHeight: 52, fontSize: 16 }}
+                  className="btn btn-outline"
+                  style={{ minHeight: 48, fontSize: 15 }}
                   onClick={apply}
                   disabled={selRent == null || !Number.isFinite(selRent)}
                 >
@@ -404,7 +337,8 @@ export default function BusanMap3D() {
           </section>
 
           <section className={`card ${styles.top5}`}>
-            <h2 style={{ fontSize: 18, marginBottom: 10 }}>월세 낮은 동네 TOP 5</h2>
+            <h2 style={{ fontSize: 18, marginBottom: 4 }}>다른 동네 둘러보기</h2>
+            <p className="small muted" style={{ margin: '0 0 10px' }}>월세가 낮은 순 · 누르면 그 동네로 이동해요</p>
             {rankings.loading && <p className="small muted" style={{ margin: 0 }}>순위 데이터를 불러오는 중…</p>}
             {!rankings.loading && rankings.error && (
               <div>
