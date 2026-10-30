@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { fetchPostCategories, fetchPosts } from '@/api/community';
+import LoginRequiredModal from '@/components/auth/LoginRequiredModal';
 import { BOARD_CODES, BOARD_LABELS, POST_LIMITS } from '@/constants/community';
 import { ROUTES } from '@/constants/routes';
 import { useAuth } from '@/components/layout/AuthProvider';
@@ -14,6 +15,43 @@ import styles from './CommunityBoard.module.css';
 function categoryName(code, categories) {
   const found = categories.find((item) => item.code === code);
   return found?.name || BOARD_LABELS[code] || code;
+}
+
+/** 목록 API의 thumbnail_url(정렬 첫 이미지). images[]가 오면 첫 URL만 사용. */
+function resolveListThumbnail(post) {
+  if (post?.thumbnail_url) return String(post.thumbnail_url);
+  const images = post?.images;
+  if (!Array.isArray(images) || images.length === 0) return null;
+  const first = images[0];
+  return first?.url || first?.public_url || null;
+}
+
+function PostRow({ post, categories }) {
+  const [thumbFailed, setThumbFailed] = useState(false);
+  const thumbSrc = resolveListThumbnail(post);
+  const showThumb = Boolean(thumbSrc) && !thumbFailed;
+
+  return (
+    <Link href={ROUTES.communityPost(post.id)} className={styles.row}>
+      {showThumb ? (
+        <img
+          className={styles.thumb}
+          src={thumbSrc}
+          alt=""
+          onError={() => setThumbFailed(true)}
+        />
+      ) : null}
+      <div className={styles.rowBody}>
+        <span className={`tag ${styles.badge}`}>{categoryName(post.category_code, categories)}</span>
+        <h3 className={styles.title}>{post.title}</h3>
+        <div className={styles.meta}>
+          <span>{post.author?.nickname || '사용자'}</span>
+          <span aria-hidden="true">·</span>
+          <span>{formatCommunityDate(post.created_at)}</span>
+        </div>
+      </div>
+    </Link>
+  );
 }
 
 export default function CommunityBoard() {
@@ -27,6 +65,7 @@ export default function CommunityBoard() {
   const [appliedQ, setAppliedQ] = useState('');
   const [page, setPage] = useState(1);
   const [reloadToken, setReloadToken] = useState(0);
+  const [loginModalOpen, setLoginModalOpen] = useState(false);
   const [state, setState] = useState({
     loading: true,
     error: null,
@@ -35,6 +74,9 @@ export default function CommunityBoard() {
     page: 1,
     page_size: POST_LIMITS.pageSize,
   });
+
+  const loginHref = `${ROUTES.login}?next=${encodeURIComponent(ROUTES.communityWrite)}`;
+  const closeLoginModal = useCallback(() => setLoginModalOpen(false), []);
 
   useEffect(() => {
     let cancelled = false;
@@ -105,11 +147,16 @@ export default function CommunityBoard() {
   const goWrite = () => {
     if (authLoading) return;
     if (!user) {
-      router.push(`${ROUTES.login}?next=${encodeURIComponent(ROUTES.communityWrite)}`);
+      setLoginModalOpen(true);
       return;
     }
     router.push(ROUTES.communityWrite);
   };
+
+  const filterItems = [
+    { code: '', name: '전체' },
+    ...categories,
+  ];
 
   return (
     <>
@@ -128,69 +175,65 @@ export default function CommunityBoard() {
         <button type="button" className={`btn ${styles.writeBtn}`} onClick={goWrite}>글쓰기</button>
       </form>
 
-      <div className={`${styles.tabs} chips filter-chips section`} role="tablist" aria-label="게시판">
-        <button type="button" role="tab" aria-selected={category === ''} className={category === '' ? 'chip big on' : 'chip big'} onClick={() => selectCategory('')}>전체</button>
-        {categories.map((item) => (
-          <button
-            key={item.code}
-            type="button"
-            role="tab"
-            aria-selected={category === item.code}
-            className={category === item.code ? 'chip big on' : 'chip big'}
-            onClick={() => selectCategory(item.code)}
-          >
-            {item.name}
-          </button>
-        ))}
-      </div>
-
-      {state.loading && <div className={`card ${styles.statusBox} muted`}>글을 불러오는 중…</div>}
-
-      {!state.loading && state.error && (
-        <div className={`card ${styles.statusBox} stack`}>
-          <p className="bad" role="alert" style={{ margin: 0 }}>{state.error}</p>
-          <button type="button" className="btn-ghost" onClick={() => setReloadToken((n) => n + 1)}>↻ 다시 시도</button>
-        </div>
-      )}
-
-      {!state.loading && !state.error && state.items.length === 0 && (
-        <div className={`card ${styles.statusBox} muted`}>
-          {appliedQ ? `'${appliedQ}'에 맞는 글이 없어요.` : '아직 글이 없어요.'}
-        </div>
-      )}
-
-      {!state.loading && !state.error && state.items.length > 0 && (
-        <div className={styles.list}>
-          {state.items.map((post) => {
-            const thumb = post.thumbnail_url;
+      <div className={styles.board}>
+        <aside className={styles.filters} aria-label="게시판 카테고리">
+          {filterItems.map((item) => {
+            const selected = category === item.code;
             return (
-              <Link
-                key={post.id}
-                href={ROUTES.communityPost(post.id)}
-                className={`${styles.card}${thumb ? ` ${styles.cardWithThumb}` : ''}`}
+              <button
+                key={item.code || 'all'}
+                type="button"
+                className={`${styles.filterBtn}${selected ? ` ${styles.filterOn}` : ''}`}
+                aria-pressed={selected}
+                onClick={() => selectCategory(item.code)}
               >
-                {thumb ? <img className={styles.thumb} src={thumb} alt="" /> : null}
-                <div className={styles.cardBody}>
-                  <h3>{post.title}</h3>
-                  <div className={styles.meta}>
-                    <span>{post.author?.nickname || '사용자'}</span>
-                    <span>{formatCommunityDate(post.created_at)}</span>
-                  </div>
-                </div>
-                <span className={`tag ${styles.tagCol}`}>{categoryName(post.category_code, categories)}</span>
-              </Link>
+                {item.name}
+              </button>
             );
           })}
-        </div>
-      )}
+        </aside>
 
-      {!state.loading && !state.error && state.total > state.page_size && (
-        <div className={styles.pager}>
-          <button type="button" className="btn-ghost" disabled={page <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))}>이전</button>
-          <span className={styles.pagerInfo}>{page} / {totalPages}</span>
-          <button type="button" className="btn-ghost" disabled={page >= totalPages} onClick={() => setPage((p) => Math.min(totalPages, p + 1))}>다음</button>
+        <div className={styles.mainCol}>
+          {state.loading && <div className={`card ${styles.statusBox} muted`}>글을 불러오는 중…</div>}
+
+          {!state.loading && state.error && (
+            <div className={`card ${styles.statusBox} stack`}>
+              <p className="bad" role="alert" style={{ margin: 0 }}>{state.error}</p>
+              <button type="button" className="btn-ghost" onClick={() => setReloadToken((n) => n + 1)}>↻ 다시 시도</button>
+            </div>
+          )}
+
+          {!state.loading && !state.error && state.items.length === 0 && (
+            <div className={`card ${styles.statusBox} muted`}>
+              {appliedQ ? `'${appliedQ}'에 맞는 글이 없어요.` : '아직 글이 없어요.'}
+            </div>
+          )}
+
+          {!state.loading && !state.error && state.items.length > 0 && (
+            <div className={styles.list}>
+              {state.items.map((post) => (
+                <PostRow key={post.id} post={post} categories={categories} />
+              ))}
+            </div>
+          )}
+
+          {!state.loading && !state.error && state.total > state.page_size && (
+            <div className={styles.pager}>
+              <button type="button" className="btn-ghost" disabled={page <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))}>이전</button>
+              <span className={styles.pagerInfo}>{page} / {totalPages}</span>
+              <button type="button" className="btn-ghost" disabled={page >= totalPages} onClick={() => setPage((p) => Math.min(totalPages, p + 1))}>다음</button>
+            </div>
+          )}
         </div>
-      )}
+      </div>
+
+      <LoginRequiredModal
+        isOpen={loginModalOpen}
+        onClose={closeLoginModal}
+        loginHref={loginHref}
+        title="회원만 접근 가능합니다"
+        description="글쓰기는 로그인 후 이용할 수 있어요."
+      />
     </>
   );
 }

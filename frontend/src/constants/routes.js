@@ -17,7 +17,7 @@ export const NAV = [
   { href: ROUTES.home, label: '생활비 계산기', match: [ROUTES.home, ROUTES.result] },
   { href: ROUTES.benefits, label: '청년 혜택', match: [ROUTES.benefits] },
   { href: ROUTES.map, label: '동네 탐색', match: [ROUTES.map, ROUTES.map2d] },
-  { href: ROUTES.culture, label: '컬처라이프', match: [ROUTES.culture] },
+  { href: ROUTES.culture, label: '컬처 라이프', match: [ROUTES.culture] },
   { href: ROUTES.community, label: '커뮤니티', match: [ROUTES.community] },
 ];
 
