@@ -1,4 +1,4 @@
-/* 청년 혜택만 Hero 아래 여백을 전역 .lift(28px)보다 좁게 */
+/* 청년 혜택: Hero와 검색 영역 간격 */
 :global(.lift).lift {
-  margin-top:-60px;
+  margin-top: 12px;
 }

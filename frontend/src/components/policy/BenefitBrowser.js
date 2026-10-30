@@ -1,22 +1,23 @@
 'use client';
 
 // 청년 혜택 목록: /api/policies · /api/policies/categories 연동
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { fetchPolicies, fetchPolicyCategories, safeOfficialUrl } from '@/api/policies';
-import { CAT_ICON } from '@/constants/benefits';
 import { getUserErrorMessage, isAbortError } from '@/utils/errors';
 import styles from './BenefitBrowser.module.css';
 
 const ALL_TAB = '전체';
+const FAVORITES_KEY = 'movesan-benefit-favorites';
 
-export function Thumb({ cat, size = 120 }) {
-  return (
-    <span className={styles.thumb} style={{ width: size, height: size }} aria-hidden="true">
-      <svg width={size * 0.36} height={size * 0.36} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
-        <path d={CAT_ICON[cat] || CAT_ICON[ALL_TAB]} />
-      </svg>
-    </span>
-  );
+function readFavorites() {
+  if (typeof window === 'undefined') return [];
+  try {
+    const raw = window.localStorage.getItem(FAVORITES_KEY);
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed.map(Number).filter(Number.isFinite) : [];
+  } catch {
+    return [];
+  }
 }
 
 function Field({ label, value }) {
@@ -27,6 +28,22 @@ function Field({ label, value }) {
       <span>{value}</span>
     </div>
   );
+}
+
+function matchesQuery(item, q) {
+  if (!q) return true;
+  const hay = [
+    item.policy_name,
+    item.description,
+    item.benefit_description,
+    item.period_description,
+    item.eligibility_description,
+    item.interest_rate_description,
+  ]
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase();
+  return hay.includes(q);
 }
 
 export default function BenefitBrowser() {
@@ -46,6 +63,12 @@ export default function BenefitBrowser() {
     items: [],
     total: 0,
   });
+  const [summaryItem, setSummaryItem] = useState(null);
+  const [favorites, setFavorites] = useState([]);
+
+  useEffect(() => {
+    setFavorites(readFavorites());
+  }, []);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -72,10 +95,8 @@ export default function BenefitBrowser() {
     const controller = new AbortController();
     setListState((prev) => ({ ...prev, loading: true, error: null }));
 
-    const category = cat === ALL_TAB ? undefined : cat;
-    const q = appliedQ.trim() || undefined;
-
-    fetchPolicies({ category, q, signal: controller.signal })
+    // 전체 목록을 받아 카테고리·검색은 클라이언트에서 필터 (사이드바 건수 표시용)
+    fetchPolicies({ signal: controller.signal })
       .then((result) => {
         setListState({
           loading: false,
@@ -97,7 +118,21 @@ export default function BenefitBrowser() {
       });
 
     return () => controller.abort();
-  }, [cat, appliedQ, reloadToken]);
+  }, [reloadToken]);
+
+  useEffect(() => {
+    if (!summaryItem) return undefined;
+    function onKey(event) {
+      if (event.key === 'Escape') setSummaryItem(null);
+    }
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    window.addEventListener('keydown', onKey);
+    return () => {
+      document.body.style.overflow = prev;
+      window.removeEventListener('keydown', onKey);
+    };
+  }, [summaryItem]);
 
   const onSearch = (event) => {
     event.preventDefault();
@@ -109,12 +144,50 @@ export default function BenefitBrowser() {
     setAppliedQ('');
   };
 
+  const toggleFavorite = useCallback((policyId) => {
+    setFavorites((prev) => {
+      const next = prev.includes(policyId)
+        ? prev.filter((id) => id !== policyId)
+        : [...prev, policyId];
+      try {
+        window.localStorage.setItem(FAVORITES_KEY, JSON.stringify(next));
+      } catch {
+        // ignore quota / private mode
+      }
+      return next;
+    });
+  }, []);
+
+  const searchedItems = useMemo(() => {
+    const q = appliedQ.trim().toLowerCase();
+    if (!q) return listState.items;
+    return listState.items.filter((item) => matchesQuery(item, q));
+  }, [listState.items, appliedQ]);
+
+  const visibleItems = useMemo(() => {
+    if (cat === ALL_TAB) return searchedItems;
+    return searchedItems.filter((item) => item.category === cat);
+  }, [searchedItems, cat]);
+
+  const categoryCounts = useMemo(() => {
+    const counts = { [ALL_TAB]: searchedItems.length };
+    categories.forEach((name) => {
+      counts[name] = searchedItems.filter((item) => item.category === name).length;
+    });
+    return counts;
+  }, [searchedItems, categories]);
+
   const showInitialLoading = listState.loading && !initialLoadDone;
   const showRefreshing = listState.loading && initialLoadDone;
   const hasFilter = Boolean(appliedQ) || cat !== ALL_TAB;
   const emptyMessage = hasFilter
     ? '검색어나 카테고리에 맞는 지원사업이 없어요.'
     : '등록된 지원사업이 없어요.';
+
+  const filterItems = [
+    { code: ALL_TAB, name: '전체 혜택' },
+    ...categories.map((name) => ({ code: name, name })),
+  ];
 
   return (
     <>
@@ -128,11 +201,11 @@ export default function BenefitBrowser() {
             type="search"
             value={draftQ}
             onChange={(e) => setDraftQ(e.target.value)}
-            placeholder="혜택 이름으로 검색"
-            aria-label="혜택 이름으로 검색"
+            placeholder="혜택 이름이나 지원 내용으로 검색"
+            aria-label="혜택 이름이나 지원 내용으로 검색"
           />
         </label>
-        <button type="submit" className="btn btn-outline" style={{ minHeight: 48 }}>검색</button>
+        <button type="submit" className={`btn btn-outline ${styles.searchBtn}`}>검색</button>
         {appliedQ ? (
           <button type="button" className="btn-ghost" onClick={clearSearch}>초기화</button>
         ) : null}
@@ -143,102 +216,152 @@ export default function BenefitBrowser() {
           <p className="bad" role="alert" style={{ margin: 0 }}>{categoriesError}</p>
           <button type="button" className="btn-ghost" onClick={() => setCategoriesReload((n) => n + 1)}>↻ 카테고리 다시 시도</button>
         </div>
-      ) : (
-        <div className={`chips filter-chips ${styles.cats}`} role="tablist" aria-label="혜택 카테고리">
-          <button
-            type="button"
-            role="tab"
-            aria-selected={cat === ALL_TAB}
-            className={cat === ALL_TAB ? 'chip big on' : 'chip big'}
-            onClick={() => setCat(ALL_TAB)}
-          >
-            {ALL_TAB}
-          </button>
-          {categoriesLoading && categories.length === 0 ? (
-            <span className="small muted">카테고리 불러오는 중…</span>
-          ) : null}
-          {categories.map((c) => (
-            <button
-              key={c}
-              type="button"
-              role="tab"
-              aria-selected={cat === c}
-              className={cat === c ? 'chip big on' : 'chip big'}
-              onClick={() => setCat(c)}
-            >
-              {c}
-            </button>
-          ))}
-        </div>
-      )}
+      ) : null}
 
-      <div className="stack" style={{ gap: 14 }}>
-        {showInitialLoading && (
-          <div className={`card ${styles.statusBox} muted`}>혜택을 불러오는 중…</div>
-        )}
-
-        {showRefreshing && (
-          <div className={`card ${styles.statusBox} muted`}>혜택을 불러오는 중…</div>
-        )}
-
-        {!listState.loading && listState.error && (
-          <div className={`card ${styles.statusBox} stack`}>
-            <p className="bad" role="alert" style={{ margin: 0 }}>{listState.error}</p>
-            <button type="button" className="btn-ghost" onClick={() => setReloadToken((n) => n + 1)}>↻ 다시 시도</button>
-          </div>
-        )}
-
-        {!listState.loading && !listState.error && (
-          <>
-            <span className="small muted">총 {listState.total}개의 지원사업이 있어요.</span>
-            {listState.items.length === 0 ? (
-              <div className={`card ${styles.statusBox} muted`}>{emptyMessage}</div>
+      <section className={styles.section} aria-label="청년 혜택 목록">
+        <div className={styles.board}>
+          <aside className={styles.sidebar} aria-label="분야별 혜택">
+            <h3 className={styles.sidebarTitle}>분야별 혜택</h3>
+            {categoriesLoading && categories.length === 0 ? (
+              <p className="small muted">카테고리 불러오는 중…</p>
             ) : (
-              <div className={styles.grid}>
-                {listState.items.map((b) => {
-                  const officialUrl = safeOfficialUrl(b.official_url);
-                  const hasFields = Boolean(
-                    b.benefit_description
-                    || b.period_description
-                    || b.eligibility_description
-                    || b.interest_rate_description,
-                  );
+              <div className={styles.filterList}>
+                {filterItems.map((item) => {
+                  const selected = cat === item.code;
+                  const count = categoryCounts[item.code] ?? 0;
                   return (
-                    <article key={b.policy_id} className={styles.card}>
-                      <div className={styles.top}>
-                        <Thumb cat={b.category} size={52} />
-                        <span className="tag">{b.category}</span>
-                      </div>
-                      <div className={styles.body}>
-                        <h3>{b.policy_name}</h3>
-                        {b.description ? <p className={styles.desc}>{b.description}</p> : null}
-                        {hasFields ? (
-                          <div className={styles.fields}>
-                            <Field label="지원 내용" value={b.benefit_description} />
-                            <Field label="지원 기간" value={b.period_description} />
-                            <Field label="지원 대상" value={b.eligibility_description} />
-                            <Field label="금리" value={b.interest_rate_description} />
-                          </div>
-                        ) : null}
-                      </div>
-                      {officialUrl ? (
-                        <a
-                          className="btn btn-outline btn-sm"
-                          href={officialUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          공식 사이트 이동 ↗
-                        </a>
-                      ) : null}
-                    </article>
+                    <button
+                      key={item.code}
+                      type="button"
+                      className={`${styles.filterBtn}${selected ? ` ${styles.filterOn}` : ''}`}
+                      aria-pressed={selected}
+                      onClick={() => setCat(item.code)}
+                    >
+                      <span className={styles.filterLabel}>{item.name}</span>
+                      <span className={styles.filterCount}>{count}</span>
+                    </button>
                   );
                 })}
               </div>
             )}
-          </>
-        )}
-      </div>
+          </aside>
+
+          <div className={styles.mainCol}>
+            {showInitialLoading || showRefreshing ? (
+              <div className={`card ${styles.statusBox} muted`}>혜택을 불러오는 중…</div>
+            ) : null}
+
+            {!listState.loading && listState.error ? (
+              <div className={`card ${styles.statusBox} stack`}>
+                <p className="bad" role="alert" style={{ margin: 0 }}>{listState.error}</p>
+                <button type="button" className="btn-ghost" onClick={() => setReloadToken((n) => n + 1)}>↻ 다시 시도</button>
+              </div>
+            ) : null}
+
+            {!listState.loading && !listState.error && visibleItems.length === 0 ? (
+              <div className={`card ${styles.statusBox} muted`}>{emptyMessage}</div>
+            ) : null}
+
+            {!listState.loading && !listState.error && visibleItems.length > 0 ? (
+              <div className={styles.grid}>
+                {visibleItems.map((b) => {
+                  const officialUrl = safeOfficialUrl(b.official_url);
+                  const favorited = favorites.includes(b.policy_id);
+                  return (
+                    <article key={b.policy_id} className={styles.card}>
+                      <div className={styles.cardTop}>
+                        <span className={styles.badge}>{b.category}</span>
+                        <button
+                          type="button"
+                          className={`${styles.heartBtn}${favorited ? ` ${styles.heartOn}` : ''}`}
+                          aria-label={favorited ? '관심 혜택 해제' : '관심 혜택 저장'}
+                          aria-pressed={favorited}
+                          onClick={() => toggleFavorite(b.policy_id)}
+                        >
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill={favorited ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                            <path d="M20.8 5.6a4.6 4.6 0 0 0-6.5 0L12 7.9l-2.3-2.3a4.6 4.6 0 0 0-6.5 6.5l2.3 2.3L12 21l6.5-6.6 2.3-2.3a4.6 4.6 0 0 0 0-6.5z" />
+                          </svg>
+                        </button>
+                      </div>
+
+                      <div className={styles.cardBody}>
+                        <h3 className={styles.cardTitle}>{b.policy_name}</h3>
+                        {b.description ? <p className={styles.desc}>{b.description}</p> : null}
+                        {b.benefit_description ? (
+                          <p className={styles.amount}>{b.benefit_description}</p>
+                        ) : null}
+                      </div>
+
+                      <div className={styles.cardActions}>
+                        <button
+                          type="button"
+                          className={styles.summaryBtn}
+                          onClick={() => setSummaryItem(b)}
+                        >
+                          요약 보기
+                        </button>
+                        {officialUrl ? (
+                          <a
+                            className={styles.sourceBtn}
+                            href={officialUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            원문 ↗
+                          </a>
+                        ) : (
+                          <span className={styles.sourceDisabled}>원문 없음</span>
+                        )}
+                      </div>
+                    </article>
+                  );
+                })}
+              </div>
+            ) : null}
+
+            <p className={styles.listHint}>
+              지원 조건은 기관 공고 기준으로 달라질 수 있어요. 신청 전 원문을 확인해 주세요.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {summaryItem ? (
+        <div className={styles.overlay} onClick={() => setSummaryItem(null)} role="presentation">
+          <div
+            className={styles.modal}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="benefit-summary-title"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <span className={styles.badge}>{summaryItem.category}</span>
+            <h2 id="benefit-summary-title" className={styles.modalTitle}>{summaryItem.policy_name}</h2>
+            {summaryItem.description ? <p className={styles.modalDesc}>{summaryItem.description}</p> : null}
+            <div className={styles.fields}>
+              <Field label="지원 내용" value={summaryItem.benefit_description} />
+              <Field label="지원 기간" value={summaryItem.period_description} />
+              <Field label="지원 대상" value={summaryItem.eligibility_description} />
+              <Field label="금리" value={summaryItem.interest_rate_description} />
+            </div>
+            <div className={styles.modalActions}>
+              {safeOfficialUrl(summaryItem.official_url) ? (
+                <a
+                  className="btn"
+                  href={safeOfficialUrl(summaryItem.official_url)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  원문 보기 ↗
+                </a>
+              ) : null}
+              <button type="button" className="btn btn-outline" onClick={() => setSummaryItem(null)}>
+                닫기
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </>
   );
 }

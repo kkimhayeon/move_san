@@ -17,11 +17,11 @@ export default function BenefitsPage() {
         compact
         eyebrow="YOUTH BENEFITS"
         title={<>당신의 첫걸음에,<br /><em>혜택을 더하다</em></>}
-        subtitle="정책, 금융상품, 문화 및 모임 활동 등 부산시와 기관의 청년 지원사업을 확인해 보세요."
+        subtitle="부산에서 시작하는 새로운 일상. 놓치면 아쉬운 지원을 한곳에 모았어요."
       />
-      
+
       <div className="page">
-        <div className={`lift stack ${styles.lift}`} style={{ gap: 36 }}>
+        <div className={`lift stack ${styles.lift}`} style={{ gap: 28 }}>
           <BenefitBrowser />
         </div>
       </div>
