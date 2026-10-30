@@ -19,6 +19,7 @@ from services.comment_service import CommentQueryError
 from services.post_service import (
     CategoryNotFoundError,
     ImageAttachError,
+    PostConnectionError,
     PostNotFoundError,
     PostForbiddenError,
     PostQueryError,
@@ -30,7 +31,9 @@ posts_bp = Blueprint("posts", __name__, url_prefix="/api/v1")
 
 INTERNAL_ERROR_MESSAGE = "서버 내부 오류가 발생했습니다."
 PROFILE_MISSING_MESSAGE = "회원 프로필이 생성되지 않았습니다."
-
+LIST_CONNECTION_ERROR_MESSAGE = (
+    "게시글을 불러오지 못했어요. 잠시 후 다시 시도해 주세요."
+)
 
 def _error(status: int, message: str):
     return jsonify({"status": status, "message": message, "result": None}), status
@@ -82,6 +85,9 @@ def get_posts():
         return _error(400, exc.message)
     except CategoryNotFoundError:
         return _error(400, PAGE_OR_Q_MESSAGE)
+    except PostConnectionError:
+        current_app.logger.error("글 목록 조회 연결 실패로 503 반환")
+        return _error(503, LIST_CONNECTION_ERROR_MESSAGE)
     except PostQueryError:
         current_app.logger.exception("글 목록 조회 실패")
         return _error(500, INTERNAL_ERROR_MESSAGE)

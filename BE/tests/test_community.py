@@ -650,6 +650,83 @@ def test_list_posts_pgrst103_returns_empty_with_total(client):
     assert body["total"] == 1
 
 
+def test_list_posts_retries_once_on_remote_protocol_error(client):
+    import httpx
+
+    with patch("services.post_service.time.sleep") as sleep_mock, patch(
+        "services.post_service.supabase"
+    ) as sb:
+        _, ranged, _, _ = _mock_list_chain(sb, data=[_post_row()], count=1)
+        execute = ranged.range.return_value.execute
+        execute.side_effect = [
+            httpx.RemoteProtocolError("Server disconnected"),
+            MagicMock(data=[_post_row()], count=1),
+        ]
+        res = client.get("/api/v1/posts")
+
+    assert res.status_code == 200
+    assert len(res.get_json()["result"]["items"]) == 1
+    assert execute.call_count == 2
+    sleep_mock.assert_called_once_with(0.3)
+
+
+def test_list_posts_connection_error_twice_returns_503(client):
+    import httpx
+
+    with patch("services.post_service.time.sleep") as sleep_mock, patch(
+        "services.post_service.supabase"
+    ) as sb:
+        _, ranged, _, _ = _mock_list_chain(sb, data=[], count=0)
+        execute = ranged.range.return_value.execute
+        execute.side_effect = httpx.RemoteProtocolError("Server disconnected")
+        res = client.get("/api/v1/posts")
+
+    assert res.status_code == 503
+    body = res.get_json()
+    assert body["status"] == 503
+    assert body["result"] is None
+    assert body["message"] == "게시글을 불러오지 못했어요. 잠시 후 다시 시도해 주세요."
+    assert execute.call_count == 2
+    sleep_mock.assert_called_once_with(0.3)
+
+
+def test_list_posts_query_error_does_not_retry(client):
+    from postgrest.exceptions import APIError
+
+    with patch("services.post_service.time.sleep") as sleep_mock, patch(
+        "services.post_service.supabase"
+    ) as sb:
+        _, ranged, _, _ = _mock_list_chain(sb, data=[], count=0)
+        execute = ranged.range.return_value.execute
+        execute.side_effect = APIError({
+            "message": "permission denied for table posts",
+            "code": "42501",
+            "hint": None,
+            "details": None,
+        })
+        res = client.get("/api/v1/posts")
+
+    assert res.status_code == 500
+    body = res.get_json()
+    assert body["status"] == 500
+    assert body["result"] is None
+    assert execute.call_count == 1
+    sleep_mock.assert_not_called()
+
+
+def test_list_posts_success_executes_once(client):
+    with patch("services.post_service.time.sleep") as sleep_mock, patch(
+        "services.post_service.supabase"
+    ) as sb:
+        _, ranged, _, _ = _mock_list_chain(sb, data=[_post_row()], count=1)
+        execute = ranged.range.return_value.execute
+        res = client.get("/api/v1/posts")
+
+    assert res.status_code == 200
+    assert execute.call_count == 1
+    sleep_mock.assert_not_called()
+
+
 def test_list_posts_search_with_pagination(client):
     with patch("services.post_service.supabase") as sb:
         _, ranged, _, current = _mock_list_chain(

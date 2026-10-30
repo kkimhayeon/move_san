@@ -2,15 +2,25 @@
 
 from __future__ import annotations
 
+import logging
 import re
+import time
 from datetime import datetime, timezone
 from typing import Any, Optional
 
+import httpx
 from postgrest.exceptions import APIError
 
 from config import supabase
 from schemas.post_schema import display_nickname
 from services.upload_service import BUCKET
+
+logger = logging.getLogger(__name__)
+
+# 목록 조회 전용: 일시적 연결 끊김 시 1회 재시도 (최초 포함 최대 2회).
+# postgrest send_with_retry는 HTTP 503/520 응답만 재시도하므로 RemoteProtocolError와 중복되지 않음.
+_LIST_CONNECTION_MAX_ATTEMPTS = 2
+_LIST_CONNECTION_RETRY_DELAY_SEC = 0.3
 
 
 class PostNotFoundError(Exception):
@@ -35,6 +45,10 @@ class ImageAttachError(Exception):
 
 class PostQueryError(Exception):
     """DB 조회/저장 실패."""
+
+
+class PostConnectionError(Exception):
+    """일시적 Supabase 연결 실패(재시도 후에도 실패)."""
 
 
 _POST_SELECT = (
@@ -206,6 +220,28 @@ def _to_detail(
     }
 
 
+def _is_transient_list_connection_error(exc: BaseException) -> bool:
+    return isinstance(exc, httpx.RemoteProtocolError)
+
+
+def _execute_posts_page_query(
+    *,
+    start: int,
+    end: int,
+    q: Optional[str],
+    category_code: Optional[str],
+) -> Any:
+    """목록 페이지 쿼리를 매번 새로 구성해 실행 (재시도 시 안전)."""
+    query = supabase.table("posts").select(_POST_SUMMARY_SELECT, count="exact")
+    query = _apply_list_filters(query, q, category_code)
+    return (
+        query.order("created_at", desc=True)
+        .order("id", desc=True)
+        .range(start, end)
+        .execute()
+    )
+
+
 def list_posts(
     *,
     page: int,
@@ -219,30 +255,61 @@ def list_posts(
 
     start = (page - 1) * page_size
     end = start + page_size - 1
-    try:
-        query = supabase.table("posts").select(_POST_SUMMARY_SELECT, count="exact")
-        query = _apply_list_filters(query, q, category_code)
-        response = (
-            query.order("created_at", desc=True)
-            .order("id", desc=True)
-            .range(start, end)
-            .execute()
-        )
-    except APIError as exc:
-        if exc.code == "PGRST103":
-            total = _total_from_range_error(exc.details)
-            if total is None:
-                total = _count_filtered_posts(q, category_code)
-            return {
-                "items": [],
-                "page": page,
-                "page_size": page_size,
-                "total": total,
-            }
-        raise PostQueryError("글 목록 조회 실패") from exc
-    except Exception as exc:
-        raise PostQueryError("글 목록 조회 실패") from exc
+    response = None
+    for attempt in range(1, _LIST_CONNECTION_MAX_ATTEMPTS + 1):
+        try:
+            response = _execute_posts_page_query(
+                start=start,
+                end=end,
+                q=q,
+                category_code=category_code,
+            )
+            if attempt > 1:
+                logger.info(
+                    "글 목록 조회 재시도 성공 attempt=%s page=%s page_size=%s",
+                    attempt,
+                    page,
+                    page_size,
+                )
+            break
+        except APIError as exc:
+            if exc.code == "PGRST103":
+                total = _total_from_range_error(exc.details)
+                if total is None:
+                    total = _count_filtered_posts(q, category_code)
+                return {
+                    "items": [],
+                    "page": page,
+                    "page_size": page_size,
+                    "total": total,
+                }
+            raise PostQueryError("글 목록 조회 실패") from exc
+        except Exception as exc:
+            if (
+                _is_transient_list_connection_error(exc)
+                and attempt < _LIST_CONNECTION_MAX_ATTEMPTS
+            ):
+                logger.warning(
+                    "글 목록 조회 연결 실패, 재시도합니다 attempt=%s page=%s page_size=%s error=%s",
+                    attempt,
+                    page,
+                    page_size,
+                    type(exc).__name__,
+                )
+                time.sleep(_LIST_CONNECTION_RETRY_DELAY_SEC)
+                continue
+            if _is_transient_list_connection_error(exc):
+                logger.error(
+                    "글 목록 조회 연결 최종 실패 attempts=%s page=%s page_size=%s error=%s",
+                    attempt,
+                    page,
+                    page_size,
+                    type(exc).__name__,
+                )
+                raise PostConnectionError("글 목록 연결 실패") from exc
+            raise PostQueryError("글 목록 조회 실패") from exc
 
+    assert response is not None
     rows = response.data or []
     total = response.count if response.count is not None else len(rows)
     post_ids = [str(row["id"]) for row in rows]
