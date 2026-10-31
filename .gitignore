@@ -10,3 +10,7 @@ venv/
 # Python 임시 파일
 __pycache__/
 *.pyc
+
+# Postman 로컬 컬렉션. 서버 실행과 배포에 사용하지 않음.
+postman/
+.postman/

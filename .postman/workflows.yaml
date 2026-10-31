@@ -1,4 +1,0 @@
-workflows:
-  syncSpecToCollection:
-    - spec: ../busan_api_spec_v1.4.yaml
-      collection: ../postman/collections/부산살림 API v1.4
