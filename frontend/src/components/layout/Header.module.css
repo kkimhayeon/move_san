@@ -9,7 +9,6 @@
 .navItem.active { color: var(--brand); font-weight: 800; }
 .navItem.active::after { content: ''; position: absolute; left: 13px; right: 13px; bottom: 0; height: 3px; border-radius: 3px 3px 0 0; background: var(--brand); }
 .headerActions { flex: none; display: flex; align-items: center; justify-content: flex-end; gap: 14px; }
-.iconBtn { width: 38px; height: 38px; border-radius: 50%; border: 1px solid var(--line); background: #fff; display: grid; place-items: center; cursor: pointer; color: var(--sub); }
 .textLink { font-size: 14px; font-weight: 600; color: var(--sub); }
 .pillBtn { font-size: 14px; font-weight: 700; color: #fff; background: var(--brand); padding: 9px 18px; border-radius: 999px; }
 .pillBtn:hover { background: var(--brand-dark); }
@@ -19,7 +18,6 @@
   .headerInner { padding: 10px 16px 0; height: auto; flex-wrap: wrap; }
   .logo { flex: 1 1 auto; }
   .headerActions { flex: none; gap: 10px; }
-  .headerActions .iconBtn { display: none; }
   .navItem { padding: 12px 6px; font-size: 14px; }
   .navItem.active::after { left: 6px; right: 6px; }
 }

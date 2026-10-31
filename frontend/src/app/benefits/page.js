@@ -1,5 +1,6 @@
 import Hero from '@/components/common/Hero';
 import BenefitBrowser from '@/components/policy/BenefitBrowser';
+import WelcomePackBanner from '@/components/policy/WelcomePackBanner';
 import { ROUTES } from '@/constants/routes';
 import { pageMeta } from '@/utils/seo';
 import styles from './benefits.module.css';
@@ -22,6 +23,7 @@ export default function BenefitsPage() {
 
       <div className="page">
         <div className={`lift stack ${styles.lift}`} style={{ gap: 28 }}>
+          <WelcomePackBanner />
           <BenefitBrowser />
         </div>
       </div>
