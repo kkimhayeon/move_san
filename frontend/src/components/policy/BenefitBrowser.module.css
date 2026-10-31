@@ -287,27 +287,6 @@
 
 .statusBox { padding: 18px; text-align: center; }
 
-.fields {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  margin-top: 4px;
-  padding: 12px 14px;
-  border-radius: 12px;
-  background: #f6f8fb;
-}
-
-.field {
-  display: grid;
-  grid-template-columns: 72px minmax(0, 1fr);
-  gap: 8px;
-  font-size: 13px;
-  line-height: 1.45;
-}
-
-.field b { color: var(--ink); font-weight: 700; }
-.field span { min-width: 0; color: var(--sub); word-break: break-word; }
-
 .overlay {
   position: fixed;
   inset: 0;
@@ -315,41 +294,160 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 20px;
+  padding: 16px;
   background: rgba(15, 23, 42, 0.5);
 }
 
 .modal {
+  display: flex;
+  flex-direction: column;
   width: 100%;
-  max-width: 480px;
-  max-height: min(86vh, 720px);
-  overflow: auto;
-  padding: 28px 24px;
+  max-width: 720px;
+  max-height: 85dvh;
+  min-height: 0;
+  overflow: hidden;
   background: var(--card);
   border: 1px solid var(--line);
   border-radius: 20px;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+  outline: none;
+}
+
+.modalBody {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  padding: 28px 28px 8px;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .modalTitle {
-  margin: 12px 0 8px;
-  font-size: 20px;
+  margin: 12px 0 0;
+  font-size: 24px;
+  font-weight: 800;
   line-height: 1.35;
+  letter-spacing: -0.02em;
   color: var(--ink);
+  overflow-wrap: anywhere;
 }
 
 .modalDesc {
-  margin: 0 0 16px;
+  margin: 12px 0 0;
   color: var(--sub);
-  font-size: 14px;
-  line-height: 1.6;
+  font-size: 16px;
+  line-height: 1.65;
+  overflow-wrap: anywhere;
 }
 
+.modalSection {
+  margin-top: 22px;
+}
+
+.modalLabel {
+  margin: 0 0 8px;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: var(--brand);
+}
+
+.benefitValue {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 800;
+  line-height: 1.4;
+  letter-spacing: -0.02em;
+  color: var(--brand-dark);
+  overflow-wrap: anywhere;
+}
+
+.eligSections {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.eligSection { min-width: 0; }
+
+.eligHeading {
+  margin: 0 0 8px;
+  font-size: 16px;
+  font-weight: 800;
+  line-height: 1.45;
+  color: var(--ink);
+}
+
+.eligText,
+.eligNotice,
+.eligFallback {
+  margin: 0;
+  color: var(--ink);
+  font-size: 16px;
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+}
+
+.eligNotice + .eligText,
+.eligText + .eligNotice,
+.eligText + .eligList,
+.eligList + .eligText,
+.eligNotice + .eligList,
+.eligList + .eligNotice {
+  margin-top: 10px;
+}
+
+.eligList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.eligList li {
+  position: relative;
+  padding-left: 1.15em;
+  color: var(--ink);
+  font-size: 16px;
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+}
+
+.eligList li::before {
+  content: "•";
+  position: absolute;
+  left: 0;
+  color: var(--brand);
+  font-weight: 700;
+}
+
+.eligNote {
+  display: block;
+  margin-top: 4px;
+  color: var(--sub);
+  font-size: 16px;
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+}
+
+.eligFallback { color: var(--sub); }
+
 .modalActions {
+  flex: none;
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
-  margin-top: 20px;
+  padding: 16px 28px 20px;
+  border-top: 1px solid var(--line);
+  background: #fff;
+}
+
+.modalActions .btn {
+  max-width: 100%;
+  overflow-wrap: anywhere;
 }
 
 @media (max-width: 1100px) {
@@ -390,4 +488,8 @@
   .card { padding: 14px; border-radius: 16px; }
   .cardTitle { font-size: 16px; }
   .cardActions { grid-template-columns: 1fr; }
+
+  .modalBody { padding: 22px 20px 8px; }
+  .modalTitle { font-size: 22px; }
+  .modalActions { padding: 14px 20px 16px; }
 }

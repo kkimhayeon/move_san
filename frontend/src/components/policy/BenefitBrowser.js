@@ -1,8 +1,9 @@
 'use client';
 
-// 청년 혜택 목록: /api/policies · /api/policies/categories 연동
-import { useCallback, useEffect, useMemo, useState } from 'react';
+// 청년 혜택 목록: /api/v1/policies · /api/v1/policies/categories 연동
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { fetchPolicies, fetchPolicyCategories, safeOfficialUrl } from '@/api/policies';
+import { ELIGIBILITY_EMPTY_MESSAGE, parseEligibility } from '@/utils/eligibility';
 import { getUserErrorMessage, isAbortError } from '@/utils/errors';
 import styles from './BenefitBrowser.module.css';
 
@@ -20,12 +21,172 @@ function readFavorites() {
   }
 }
 
-function Field({ label, value }) {
-  if (!value) return null;
+function EligibilityBlocks({ blocks }) {
+  if (!blocks || blocks.length === 0) return null;
+  return blocks.map((block, index) => {
+    if (block.type === 'list') {
+      return (
+        <ul key={`list-${index}`} className={styles.eligList}>
+          {block.items.map((item, itemIndex) => (
+            <li key={`item-${itemIndex}`}>
+              {item.text ? <span>{item.text}</span> : null}
+              {item.notes.map((note, noteIndex) => (
+                <span key={`note-${noteIndex}`} className={styles.eligNote}>{note}</span>
+              ))}
+            </li>
+          ))}
+        </ul>
+      );
+    }
+    if (block.type === 'notice') {
+      return <p key={`notice-${index}`} className={styles.eligNotice}>{block.text}</p>;
+    }
+    return (
+      <p key={`text-${index}`} className={styles.eligText}>
+        {block.lines.map((line, lineIndex) => (
+          <span key={`line-${lineIndex}`}>
+            {lineIndex > 0 ? <br /> : null}
+            {line}
+          </span>
+        ))}
+      </p>
+    );
+  });
+}
+
+function EligibilityBody({ value }) {
+  const parsed = parseEligibility(value);
+  if (parsed.kind === 'empty') {
+    return <p className={styles.eligFallback}>{ELIGIBILITY_EMPTY_MESSAGE}</p>;
+  }
+  if (parsed.kind === 'plain') {
+    return <EligibilityBlocks blocks={parsed.blocks} />;
+  }
   return (
-    <div className={styles.field}>
-      <b>{label}</b>
-      <span>{value}</span>
+    <div className={styles.eligSections}>
+      <EligibilityBlocks blocks={parsed.preamble} />
+      {parsed.sections.map((section, index) => (
+        <section key={`${section.title}-${index}`} className={styles.eligSection}>
+          <h4 className={styles.eligHeading}>{section.title}</h4>
+          <EligibilityBlocks blocks={section.blocks} />
+        </section>
+      ))}
+    </div>
+  );
+}
+
+function focusableIn(root) {
+  if (!root) return [];
+  return [...root.querySelectorAll('a[href], button:not([disabled]), textarea, input, select, [tabindex]:not([tabindex="-1"])')];
+}
+
+function BenefitDetailModal({ item, onClose }) {
+  const dialogRef = useRef(null);
+  const officialUrl = safeOfficialUrl(item.official_url);
+
+  useEffect(() => {
+    const restore = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    const dialog = dialogRef.current;
+    dialog?.focus();
+
+    function onKeyDown(event) {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        onClose();
+        return;
+      }
+      if (event.key !== 'Tab' || !dialog) return;
+      const items = focusableIn(dialog);
+      if (items.length === 0) {
+        event.preventDefault();
+        dialog.focus();
+        return;
+      }
+      const first = items[0];
+      const last = items[items.length - 1];
+      const active = document.activeElement;
+      if (event.shiftKey && (active === first || active === dialog)) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && active === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    }
+
+    function onFocusIn(event) {
+      if (!dialog || dialog.contains(event.target)) return;
+      const items = focusableIn(dialog);
+      (items[0] || dialog).focus();
+    }
+
+    document.addEventListener('keydown', onKeyDown);
+    document.addEventListener('focusin', onFocusIn);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener('keydown', onKeyDown);
+      document.removeEventListener('focusin', onFocusIn);
+      if (restore?.isConnected) restore.focus();
+    };
+  }, [onClose]);
+
+  return (
+    <div className={styles.overlay} onClick={onClose} role="presentation">
+      <div
+        ref={dialogRef}
+        className={styles.modal}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="benefit-summary-title"
+        tabIndex={-1}
+        onClick={(event) => event.stopPropagation()}
+      >
+        <div className={styles.modalBody}>
+          <span className={styles.badge}>{item.category}</span>
+          <h2 id="benefit-summary-title" className={styles.modalTitle}>{item.policy_name}</h2>
+          {item.description ? <p className={styles.modalDesc}>{item.description}</p> : null}
+
+          {item.benefit_description ? (
+            <section className={styles.modalSection}>
+              <h3 className={styles.modalLabel}>지원 혜택</h3>
+              <p className={styles.benefitValue}>{item.benefit_description}</p>
+            </section>
+          ) : null}
+
+          {item.period_description ? (
+            <section className={styles.modalSection}>
+              <h3 className={styles.modalLabel}>지원 기간</h3>
+              <p className={styles.eligText}>{item.period_description}</p>
+            </section>
+          ) : null}
+
+          {item.interest_rate_description ? (
+            <section className={styles.modalSection}>
+              <h3 className={styles.modalLabel}>금리</h3>
+              <p className={styles.eligText}>{item.interest_rate_description}</p>
+            </section>
+          ) : null}
+
+          <section className={styles.modalSection}>
+            <h3 className={styles.modalLabel}>자격 요건</h3>
+            <EligibilityBody value={item.eligibility_description} />
+          </section>
+        </div>
+
+        <div className={styles.modalActions}>
+          {officialUrl ? (
+            <a className="btn" href={officialUrl} target="_blank" rel="noopener noreferrer">
+              홈페이지로 이동
+            </a>
+          ) : null}
+          <button type="button" className="btn btn-outline" onClick={onClose}>
+            닫기
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
@@ -120,19 +281,7 @@ export default function BenefitBrowser() {
     return () => controller.abort();
   }, [reloadToken]);
 
-  useEffect(() => {
-    if (!summaryItem) return undefined;
-    function onKey(event) {
-      if (event.key === 'Escape') setSummaryItem(null);
-    }
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    window.addEventListener('keydown', onKey);
-    return () => {
-      document.body.style.overflow = prev;
-      window.removeEventListener('keydown', onKey);
-    };
-  }, [summaryItem]);
+  const closeSummary = useCallback(() => setSummaryItem(null), []);
 
   const onSearch = (event) => {
     event.preventDefault();
@@ -298,7 +447,7 @@ export default function BenefitBrowser() {
                           className={styles.summaryBtn}
                           onClick={() => setSummaryItem(b)}
                         >
-                          요약 보기
+                          자세히 보기
                         </button>
                         {officialUrl ? (
                           <a
@@ -306,8 +455,9 @@ export default function BenefitBrowser() {
                             href={officialUrl}
                             target="_blank"
                             rel="noopener noreferrer"
+                            aria-label="공식 안내"
                           >
-                            원문 ↗
+                            ↗
                           </a>
                         ) : (
                           <span className={styles.sourceDisabled}>원문 없음</span>
@@ -327,40 +477,7 @@ export default function BenefitBrowser() {
       </section>
 
       {summaryItem ? (
-        <div className={styles.overlay} onClick={() => setSummaryItem(null)} role="presentation">
-          <div
-            className={styles.modal}
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="benefit-summary-title"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <span className={styles.badge}>{summaryItem.category}</span>
-            <h2 id="benefit-summary-title" className={styles.modalTitle}>{summaryItem.policy_name}</h2>
-            {summaryItem.description ? <p className={styles.modalDesc}>{summaryItem.description}</p> : null}
-            <div className={styles.fields}>
-              <Field label="지원 내용" value={summaryItem.benefit_description} />
-              <Field label="지원 기간" value={summaryItem.period_description} />
-              <Field label="지원 대상" value={summaryItem.eligibility_description} />
-              <Field label="금리" value={summaryItem.interest_rate_description} />
-            </div>
-            <div className={styles.modalActions}>
-              {safeOfficialUrl(summaryItem.official_url) ? (
-                <a
-                  className="btn"
-                  href={safeOfficialUrl(summaryItem.official_url)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  원문 보기 ↗
-                </a>
-              ) : null}
-              <button type="button" className="btn btn-outline" onClick={() => setSummaryItem(null)}>
-                닫기
-              </button>
-            </div>
-          </div>
-        </div>
+        <BenefitDetailModal item={summaryItem} onClose={closeSummary} />
       ) : null}
     </>
   );

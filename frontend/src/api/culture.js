@@ -1,4 +1,4 @@
-// GET {API_BASE}/api/culture/events · /places · /articles (공개 조회, /api/v1 아님)
+// GET {API_BASE}/api/v1/culture/events · /places · /articles (공개 조회)
 import { API_BASE } from './client';
 import { withPublicCache } from '@/lib/publicCache';
 import {
@@ -214,7 +214,7 @@ export async function fetchCultureEvents(params) {
     cacheKey,
     CULTURE_TTL_MS,
     async () => {
-      const data = await fetchCultureApi(`/api/culture/events${query}`);
+      const data = await fetchCultureApi(`/api/v1/culture/events${query}`);
       const page = normalizePageResult(data);
       return {
         ...page,
@@ -239,7 +239,7 @@ export async function fetchCulturePlaces(params = {}) {
     cacheKey,
     CULTURE_TTL_MS,
     async () => {
-      const data = await fetchCultureApi(`/api/culture/places${query}`);
+      const data = await fetchCultureApi(`/api/v1/culture/places${query}`);
       const page = normalizePageResult(data);
       return {
         ...page,
@@ -269,7 +269,7 @@ export async function fetchCultureArticles(params) {
     cacheKey,
     CULTURE_TTL_MS,
     async () => {
-      const data = await fetchCultureApi(`/api/culture/articles${query}`);
+      const data = await fetchCultureApi(`/api/v1/culture/articles${query}`);
       const page = normalizePageResult(data);
       return {
         ...page,

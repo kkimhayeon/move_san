@@ -1,4 +1,4 @@
-// GET {API_BASE}/api/policies · /api/policies/categories (인증 불필요, /api/v1 아님)
+// GET {API_BASE}/api/v1/policies · /api/v1/policies/categories (인증 불필요)
 import { API_BASE } from './client';
 import { withPublicCache } from '@/lib/publicCache';
 import {
@@ -137,7 +137,7 @@ export async function fetchPolicies(params = {}) {
     cacheKey,
     POLICIES_TTL_MS,
     async () => {
-      const data = await fetchPoliciesApi(`/api/policies${query}`);
+      const data = await fetchPoliciesApi(`/api/v1/policies${query}`);
       const result = data?.result;
       if (!result || typeof result !== 'object' || !Array.isArray(result.items)) {
         throw createApiError({ kind: 'parse' });
@@ -164,7 +164,7 @@ export async function fetchPolicyCategories(options = {}) {
     'policies:categories',
     POLICIES_TTL_MS,
     async () => {
-      const data = await fetchPoliciesApi('/api/policies/categories');
+      const data = await fetchPoliciesApi('/api/v1/policies/categories');
       const categories = data?.result?.categories;
       if (!Array.isArray(categories)) {
         throw createApiError({ kind: 'parse' });
