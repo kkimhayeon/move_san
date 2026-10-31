@@ -154,7 +154,7 @@ def test_events_forces_approved_and_visibility_filter(client):
         "services.culture_service.today_kst", return_value=date(2026, 10, 29)
     ):
         chain = _mock_list_chain(sb, [_event_row()], count=1)
-        res = client.get("/api/culture/events")
+        res = client.get("/api/v1/culture/events")
     assert res.status_code == 200
     chain.eq.assert_any_call("status", "approved")
     chain.eq.assert_any_call("section", "open")
@@ -180,7 +180,7 @@ def test_events_end_date_today_included_yesterday_excluded_via_filter(client):
         "services.culture_service.today_kst", return_value=date(2026, 10, 29)
     ):
         chain = _mock_list_chain(sb, [], count=0)
-        client.get("/api/culture/events")
+        client.get("/api/v1/culture/events")
     or_arg = chain.or_.call_args.args[0]
     # 당일: end_date.gte.today 로 포함
     assert "end_date.gte.2026-10-29" in or_arg
@@ -197,7 +197,7 @@ def test_events_keep_after_end_ended_status(client):
         "services.culture_service.today_kst", return_value=date(2026, 10, 29)
     ):
         _mock_list_chain(sb, [row], count=1)
-        res = client.get("/api/culture/events")
+        res = client.get("/api/v1/culture/events")
     item = res.get_json()["result"]["items"][0]
     assert item["schedule_status"] == "ended"
     assert item["keep_after_end"] is True
@@ -219,7 +219,7 @@ def test_events_no_end_date_and_unknown_dates(client):
             ],
             count=2,
         )
-        res = client.get("/api/culture/events")
+        res = client.get("/api/v1/culture/events")
     items = res.get_json()["result"]["items"]
     assert items[0]["schedule_status"] == "ongoing"
     assert items[1]["schedule_status"] == "unknown"
@@ -231,7 +231,7 @@ def test_events_rejects_client_status_query_by_ignoring_and_forcing_approved(cli
         "services.culture_service.today_kst", return_value=date(2026, 10, 29)
     ):
         chain = _mock_list_chain(sb, [], count=0)
-        res = client.get("/api/culture/events?status=candidate")
+        res = client.get("/api/v1/culture/events?status=candidate")
     assert res.status_code == 200
     status_calls = [c for c in chain.eq.call_args_list if c.args[0] == "status"]
     assert len(status_calls) == 1
@@ -244,7 +244,7 @@ def test_events_category_and_district_filters(client):
     ):
         chain = _mock_list_chain(sb, [], count=0)
         res = client.get(
-            "/api/culture/events?section=open&category=MUSIC&district=%ED%95%B4%EC%9A%B4%EB%8C%80%EA%B5%AC"
+            "/api/v1/culture/events?section=open&category=MUSIC&district=%ED%95%B4%EC%9A%B4%EB%8C%80%EA%B5%AC"
         )
     assert res.status_code == 200
     chain.eq.assert_any_call("category", "MUSIC")
@@ -252,7 +252,7 @@ def test_events_category_and_district_filters(client):
 
 
 def test_events_stay_category_validation(client):
-    res = client.get("/api/culture/events?section=stay&category=ART")
+    res = client.get("/api/v1/culture/events?section=stay&category=ART")
     assert res.status_code == 400
     assert "category" in res.get_json()["message"]
 
@@ -260,21 +260,21 @@ def test_events_stay_category_validation(client):
         "services.culture_service.today_kst", return_value=date(2026, 10, 29)
     ):
         chain = _mock_list_chain(sb, [], count=0)
-        res = client.get("/api/culture/events?section=stay&category=booktalk")
+        res = client.get("/api/v1/culture/events?section=stay&category=booktalk")
     assert res.status_code == 200
     chain.eq.assert_any_call("section", "stay")
     chain.eq.assert_any_call("category", "booktalk")
 
 
 def test_events_invalid_query_400(client):
-    assert client.get("/api/culture/events?section=meet").status_code == 400
-    assert client.get("/api/culture/events?category=UNKNOWN").status_code == 400
-    assert client.get("/api/culture/events?page=0").status_code == 400
-    assert client.get("/api/culture/events?page=-1").status_code == 400
-    assert client.get("/api/culture/events?page=1.5").status_code == 400
-    assert client.get("/api/culture/events?page_size=0").status_code == 400
-    assert client.get("/api/culture/events?page_size=51").status_code == 400
-    assert client.get("/api/culture/events?page_size=abc").status_code == 400
+    assert client.get("/api/v1/culture/events?section=meet").status_code == 400
+    assert client.get("/api/v1/culture/events?category=UNKNOWN").status_code == 400
+    assert client.get("/api/v1/culture/events?page=0").status_code == 400
+    assert client.get("/api/v1/culture/events?page=-1").status_code == 400
+    assert client.get("/api/v1/culture/events?page=1.5").status_code == 400
+    assert client.get("/api/v1/culture/events?page_size=0").status_code == 400
+    assert client.get("/api/v1/culture/events?page_size=51").status_code == 400
+    assert client.get("/api/v1/culture/events?page_size=abc").status_code == 400
 
 
 def test_events_empty_and_out_of_range_page(client):
@@ -282,7 +282,7 @@ def test_events_empty_and_out_of_range_page(client):
         "services.culture_service.today_kst", return_value=date(2026, 10, 29)
     ):
         _mock_list_chain(sb, [], count=0)
-        res = client.get("/api/culture/events?page=99")
+        res = client.get("/api/v1/culture/events?page=99")
     assert res.status_code == 200
     body = res.get_json()["result"]
     assert body["items"] == []
@@ -306,7 +306,7 @@ def test_events_pgrst103_returns_empty_with_total(client):
             "hint": None,
             "details": "An offset of 80 was requested, but there are only 34 rows",
         })
-        res = client.get("/api/culture/events?page=11&page_size=8")
+        res = client.get("/api/v1/culture/events?page=11&page_size=8")
     assert res.status_code == 200
     body = res.get_json()["result"]
     assert body["items"] == []
@@ -318,7 +318,7 @@ def test_events_ordering(client):
         "services.culture_service.today_kst", return_value=date(2026, 10, 29)
     ):
         chain = _mock_list_chain(sb, [], count=0)
-        client.get("/api/culture/events")
+        client.get("/api/v1/culture/events")
     assert chain.order.call_args_list[0].args == ("sort_weight",)
     assert chain.order.call_args_list[0].kwargs.get("desc") is True
     assert chain.order.call_args_list[1].args == ("start_date",)
@@ -329,7 +329,7 @@ def test_events_ordering(client):
 def test_events_db_error_hides_detail(client):
     with patch("services.culture_service.supabase") as sb:
         sb.table.side_effect = RuntimeError("secret connection string")
-        res = client.get("/api/culture/events")
+        res = client.get("/api/v1/culture/events")
     assert res.status_code == 500
     body = res.get_json()
     assert body["result"] is None
@@ -342,7 +342,7 @@ def test_events_db_error_hides_detail(client):
 def test_places_forces_published(client):
     with patch("services.culture_service.supabase") as sb:
         chain = _mock_list_chain(sb, [_place_row(lat=None, lng=None)], count=1)
-        res = client.get("/api/culture/places")
+        res = client.get("/api/v1/culture/places")
     assert res.status_code == 200
     chain.eq.assert_any_call("is_published", True)
     body = res.get_json()["result"]
@@ -356,14 +356,14 @@ def test_places_forces_published(client):
 def test_places_kind_and_district(client):
     with patch("services.culture_service.supabase") as sb:
         chain = _mock_list_chain(sb, [], count=0)
-        res = client.get("/api/culture/places?kind=bathhouse&district=%EC%88%98%EC%98%81%EA%B5%AC")
+        res = client.get("/api/v1/culture/places?kind=bathhouse&district=%EC%88%98%EC%98%81%EA%B5%AC")
     assert res.status_code == 200
     chain.eq.assert_any_call("kind", "bathhouse")
     chain.eq.assert_any_call("district", "수영구")
 
 
 def test_places_invalid_kind_400(client):
-    res = client.get("/api/culture/places?kind=cafe")
+    res = client.get("/api/v1/culture/places?kind=cafe")
     assert res.status_code == 400
     assert "kind" in res.get_json()["message"]
 
@@ -371,7 +371,7 @@ def test_places_invalid_kind_400(client):
 def test_places_ordering(client):
     with patch("services.culture_service.supabase") as sb:
         chain = _mock_list_chain(sb, [], count=0)
-        client.get("/api/culture/places")
+        client.get("/api/v1/culture/places")
     assert chain.order.call_args_list[0].args == ("display_order",)
     assert chain.order.call_args_list[1].args == ("id",)
 
@@ -386,7 +386,7 @@ def test_articles_forces_published_and_expires_filter(client):
     ) as dt:
         dt.now.return_value = fixed_now
         chain = _mock_list_chain(sb, [_article_row()], count=1)
-        res = client.get("/api/culture/articles")
+        res = client.get("/api/v1/culture/articles")
     assert res.status_code == 200
     chain.eq.assert_any_call("is_published", True)
     or_arg = chain.or_.call_args.args[0]
@@ -401,10 +401,10 @@ def test_articles_forces_published_and_expires_filter(client):
 
 
 def test_articles_type_filter_and_validation(client):
-    assert client.get("/api/culture/articles?article_type=blog").status_code == 400
+    assert client.get("/api/v1/culture/articles?article_type=blog").status_code == 400
     with patch("services.culture_service.supabase") as sb:
         chain = _mock_list_chain(sb, [], count=0)
-        res = client.get("/api/culture/articles?article_type=story")
+        res = client.get("/api/v1/culture/articles?article_type=story")
     assert res.status_code == 200
     chain.eq.assert_any_call("article_type", "story")
 
@@ -412,7 +412,7 @@ def test_articles_type_filter_and_validation(client):
 def test_articles_empty_200(client):
     with patch("services.culture_service.supabase") as sb:
         _mock_list_chain(sb, [], count=0)
-        res = client.get("/api/culture/articles?page=5")
+        res = client.get("/api/v1/culture/articles?page=5")
     assert res.status_code == 200
     body = res.get_json()["result"]
     assert body["items"] == []

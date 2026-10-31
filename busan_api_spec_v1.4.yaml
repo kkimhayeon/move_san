@@ -29,7 +29,7 @@ info:
 
     지도 월세는 보증금 1000만원 환산(adjusted_1000), 2023-09~2026-08, 전용면적 ≤33㎡, 주택유형 단독/다가구·연립다세대·오피스텔.
     구군 중심좌표·출처명·갱신시각은 프로젝트에 검증된 값이 없어 null. 컬처라이프 공개 목록은
-    /api/culture/events·places·articles. 지역 코드/RAG는 미정.
+    /api/v1/culture/events·places·articles. 지역 코드/RAG는 미정.
     챗봇은 인증 미확정으로 실행용 paths에서 제외하고 x-pending-apis에 보관.
 
     예시 정책/상품/지역/통계/URL은 구조 설명용 가상값이다. 실제 서비스 데이터로 사용하지 않는다.'
@@ -131,7 +131,7 @@ paths:
               busan_rent: 50
               living: 100
       x-api-id: CALC-001
-  /api/policies:
+  /api/v1/policies:
     get:
       tags:
       - 정책
@@ -204,7 +204,7 @@ paths:
         schema:
           type: string
       x-api-id: POLICY-001
-  /api/policies/categories:
+  /api/v1/policies/categories:
     get:
       tags:
       - 정책
@@ -240,7 +240,7 @@ paths:
                 message: 서버 내부 오류가 발생했습니다.
                 result: null
       x-api-id: POLICY-002
-  /api/culture/events:
+  /api/v1/culture/events:
     get:
       tags:
       - 컬처
@@ -352,7 +352,7 @@ paths:
           maximum: 50
           default: 8
       x-api-id: CULTURE-001
-  /api/culture/places:
+  /api/v1/culture/places:
     get:
       tags:
       - 컬처
@@ -450,7 +450,7 @@ paths:
           maximum: 50
           default: 20
       x-api-id: CULTURE-002
-  /api/culture/articles:
+  /api/v1/culture/articles:
     get:
       tags:
       - 컬처
@@ -3580,7 +3580,7 @@ x-open-decisions:
 - item: 지역 코드
   pending: 법정동/행정동 및 코드 체계 문서화. 지도 API는 거래 테이블 sggCd/sggNm(기장군 포함) 사용.
 - item: 컬처/즐길 거리
-  resolved: culture_events·places·articles 공개 목록 API(/api/culture/*) 구현. 커버 슬라이드·홍보
+  resolved: culture_events·places·articles 공개 목록 API(/api/v1/culture/*) 구현. 커버 슬라이드·홍보
     배너는 프론트 정적. 지도 내 즐길 거리 연동은 별도.
 - item: 회원
   pending: Supabase Auth 사용 확정. 모든 회원 기능 이번 구현 포함. 이메일 확인/redirect URL/프로필 초기화 설정은

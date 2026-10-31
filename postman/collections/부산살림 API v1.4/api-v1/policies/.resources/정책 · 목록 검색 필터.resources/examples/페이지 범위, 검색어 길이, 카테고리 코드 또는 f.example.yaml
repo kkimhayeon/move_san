@@ -1,7 +1,7 @@
 $kind: http-example
 name: 카테고리 값이 올바르지 않습니다.
 request:
-  url: "{{baseUrl}}/api/policies?category=없는값"
+  url: "{{baseUrl}}/api/v1/policies?category=없는값"
   method: GET
   headers:
     Accept: application/json

@@ -1,7 +1,7 @@
 $kind: http-request
 name: 혜택 · 목록 조회
 description: support_policies 공개 혜택. is_visible=true, official_url 필수. category·q 선택 필터. 로그인 불필요.
-url: "{{baseUrl}}/api/policies?category=정책&q="
+url: "{{baseUrl}}/api/v1/policies?category=정책&q="
 method: GET
 headers:
   Accept: application/json

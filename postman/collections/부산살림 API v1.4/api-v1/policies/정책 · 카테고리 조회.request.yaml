@@ -1,7 +1,7 @@
 $kind: http-request
 name: 혜택 · 카테고리 조회
 description: 고정 카테고리 정책 / 금융상품 / 문화 및 모임 활동. 로그인 불필요.
-url: "{{baseUrl}}/api/policies/categories"
+url: "{{baseUrl}}/api/v1/policies/categories"
 method: GET
 headers:
   Accept: application/json

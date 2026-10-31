@@ -11,8 +11,8 @@ from schemas.policy_schema import (
 from services import policy_service
 from services.policy_service import PolicyQueryError
 
-# 혜택 공개 조회는 /api (v1 경로를 새로 두지 않음)
-policies_bp = Blueprint("policies", __name__, url_prefix="/api")
+# 혜택 공개 조회. 라우트는 /policies 이므로 최종 경로는 /api/v1/policies
+policies_bp = Blueprint("policies", __name__, url_prefix="/api/v1")
 
 # 즐겨찾기 스텁은 기존 명세 경로(/api/v1) 유지
 policy_favorites_bp = Blueprint("policy_favorites", __name__, url_prefix="/api/v1")

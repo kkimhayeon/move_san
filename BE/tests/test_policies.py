@@ -42,7 +42,7 @@ def test_list_all_policies(client):
     ]
     with patch("services.policy_service.supabase") as sb:
         _mock_query(sb, rows)
-        res = client.get("/api/policies")
+        res = client.get("/api/v1/policies")
     assert res.status_code == 200
     body = res.get_json()
     assert body["status"] == 200
@@ -56,7 +56,7 @@ def test_list_by_each_category(client):
     for category in POLICY_CATEGORIES:
         with patch("services.policy_service.supabase") as sb:
             chain = _mock_query(sb, [_row(category=category)])
-            res = client.get(f"/api/policies?category={category}")
+            res = client.get(f"/api/v1/policies?category={category}")
         assert res.status_code == 200
         assert res.get_json()["result"]["items"][0]["category"] == category
         chain.eq.assert_any_call("category", category)
@@ -65,7 +65,7 @@ def test_list_by_each_category(client):
 def test_search_and_category_combination(client):
     with patch("services.policy_service.supabase") as sb:
         chain = _mock_query(sb, [_row(policy_name="부산 청년")])
-        res = client.get("/api/policies?category=정책&q=%20부산%20")
+        res = client.get("/api/v1/policies?category=정책&q=%20부산%20")
     assert res.status_code == 200
     chain.eq.assert_any_call("category", "정책")
     chain.ilike.assert_called_once_with("policy_name", "%부산%")
@@ -73,7 +73,7 @@ def test_search_and_category_combination(client):
 
 
 def test_invalid_category_400(client):
-    res = client.get("/api/policies?category=없는카테고리")
+    res = client.get("/api/v1/policies?category=없는카테고리")
     assert res.status_code == 400
     body = res.get_json()
     assert body["status"] == 400
@@ -84,7 +84,7 @@ def test_invalid_category_400(client):
 def test_blank_category_and_q_mean_no_filter(client):
     with patch("services.policy_service.supabase") as sb:
         chain = _mock_query(sb, [])
-        res = client.get("/api/policies?category=%20%20&q=%20")
+        res = client.get("/api/v1/policies?category=%20%20&q=%20")
     assert res.status_code == 200
     # is_visible 필터만, category/ilike 미적용
     category_calls = [c for c in chain.eq.call_args_list if c.args[0] == "category"]
@@ -95,7 +95,7 @@ def test_blank_category_and_q_mean_no_filter(client):
 def test_empty_list_200(client):
     with patch("services.policy_service.supabase") as sb:
         _mock_query(sb, [])
-        res = client.get("/api/policies?q=없는검색어xyz")
+        res = client.get("/api/v1/policies?q=없는검색어xyz")
     assert res.status_code == 200
     body = res.get_json()["result"]
     assert body["items"] == []
@@ -105,7 +105,7 @@ def test_empty_list_200(client):
 def test_excludes_invisible_and_blank_url_in_query(client):
     with patch("services.policy_service.supabase") as sb:
         chain = _mock_query(sb, [])
-        client.get("/api/policies")
+        client.get("/api/v1/policies")
     chain.eq.assert_any_call("is_visible", True)
     chain.not_.is_.assert_called_with("official_url", "null")
     chain.neq.assert_called_with("official_url", "")
@@ -120,7 +120,7 @@ def test_excludes_whitespace_url_in_response(client):
                 _row(policy_id=2, official_url="   "),
             ],
         )
-        res = client.get("/api/policies")
+        res = client.get("/api/v1/policies")
     items = res.get_json()["result"]["items"]
     assert len(items) == 1
     assert items[0]["policy_id"] == 1
@@ -139,7 +139,7 @@ def test_nullable_fields_preserved(client):
                 )
             ],
         )
-        res = client.get("/api/policies")
+        res = client.get("/api/v1/policies")
     item = res.get_json()["result"]["items"][0]
     assert item["benefit_description"] is None
     assert item["period_description"] is None
@@ -148,7 +148,7 @@ def test_nullable_fields_preserved(client):
 
 
 def test_categories_fixed_order(client):
-    res = client.get("/api/policies/categories")
+    res = client.get("/api/v1/policies/categories")
     assert res.status_code == 200
     body = res.get_json()
     assert body["result"]["categories"] == [
@@ -161,7 +161,7 @@ def test_categories_fixed_order(client):
 def test_db_error_500(client):
     with patch("services.policy_service.supabase") as sb:
         sb.table.side_effect = RuntimeError("db down")
-        res = client.get("/api/policies")
+        res = client.get("/api/v1/policies")
     assert res.status_code == 500
     body = res.get_json()
     assert body["result"] is None
@@ -171,7 +171,7 @@ def test_db_error_500(client):
 def test_orders_by_policy_id(client):
     with patch("services.policy_service.supabase") as sb:
         chain = _mock_query(sb, [])
-        client.get("/api/policies")
+        client.get("/api/v1/policies")
     chain.order.assert_called_with("policy_id")
 
 

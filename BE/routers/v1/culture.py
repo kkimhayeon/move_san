@@ -12,8 +12,8 @@ from schemas.culture_schema import (
 from services import culture_service
 from services.culture_service import CultureQueryError
 
-# 컬처 공개 조회는 /api (policies와 동일하게 v1 경로를 새로 두지 않음)
-culture_bp = Blueprint("culture", __name__, url_prefix="/api")
+# 컬처 공개 조회. 라우트는 /culture/... 이므로 최종 경로는 /api/v1/culture/...
+culture_bp = Blueprint("culture", __name__, url_prefix="/api/v1")
 
 
 def _error(status: int, message: str):
