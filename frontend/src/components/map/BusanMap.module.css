@@ -35,7 +35,7 @@
 .picked { background: #0f1e33; color: #fff; text-shadow: none; padding: 4px 8px; border-radius: 8px; z-index: 2; }
 .sea { position: absolute; left: 30%; bottom: 5%; font-size: 13px; font-weight: 700; color: #6c93c4; letter-spacing: 0.3em; }
 .legend { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-top: 12px; font-size: 12px; color: var(--sub); }
-.legend i { display: inline-block; width: 14px; height: 14px; border-radius: 4px; margin-right: 5px; vertical-align: -2px; }
+.legend i { display: inline-block; width: 14px; height: 14px; border-radius: 4px; margin-right: 5px; vertical-align: -2px; border: 1px solid rgba(15, 30, 51, 0.12); box-sizing: border-box; }
 .panelBig { font-size: 44px; font-weight: 900; color: var(--brand); letter-spacing: -0.04em; line-height: 1.1; }
 .panelBig small { font-size: 18px; font-weight: 800; margin-left: 2px; }
 .statGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }

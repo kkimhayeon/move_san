@@ -13,11 +13,11 @@ import { signed } from '@/utils/formatMoney';
 import styles from './BusanMap.module.css';
 
 const BINS = [
-  { max: 36, color: '#DCEAFE' },
-  { max: 40, color: '#B4D2FD' },
-  { max: 45, color: '#7DB0F7' },
-  { max: 50, color: '#4A88EC' },
-  { max: Infinity, color: '#2160D9' },
+  { max: 36, color: '#F4F8FF' },
+  { max: 40, color: '#8ECAFF' },
+  { max: 45, color: '#3B82F6' },
+  { max: 50, color: '#12398F' },
+  { max: Infinity, color: '#071433' },
 ];
 const SELECTED = '#0F2F73';
 const NEUTRAL = '#E8EEF5';

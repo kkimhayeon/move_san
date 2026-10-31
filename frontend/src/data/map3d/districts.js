@@ -154,9 +154,10 @@ export const DISTRICTS = {
   },
 };
 
-// 월세 구간 색 (2D 지도 BINS와 동일한 구간)
-export const RENT_FILL = ['#DCEAFE', '#B4D2FD', '#7DB0F7', '#4A88EC', '#2160D9'];
-export const RENT_SIDE = ['#B9CBE2', '#9DB8DA', '#7AA2D2', '#4A80C6', '#1E4E9E'];
+// 월세 구간 색. 2D 지도 BINS와 같은 5단계.
+// 실제 구·군은 36만원 이하와 37~40만원에 몰려 있어, 인접 단계의 밝기 차이를 크게 둔다.
+export const RENT_FILL = ['#F4F8FF', '#8ECAFF', '#3B82F6', '#12398F', '#071433'];
+export const RENT_SIDE = ['#D5E4F6', '#4A9ADF', '#1D4ED8', '#0C2A6B', '#040C22'];
 export const MISSING_FILL = '#CBD5E1';
 export const MISSING_SIDE = '#A8B4C4';
 export const NEUTRAL_FILL = '#E8EEF5';

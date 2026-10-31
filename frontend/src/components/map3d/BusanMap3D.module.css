@@ -137,6 +137,8 @@
   border-radius: 4px;
   margin-right: 4px;
   vertical-align: -2px;
+  border: 1px solid rgba(15, 30, 51, 0.12);
+  box-sizing: border-box;
 }
 
 .panelBig {
