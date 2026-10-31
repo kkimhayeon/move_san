@@ -1,0 +1,15 @@
+.hero { position: relative; overflow: hidden; min-height: 360px; background: #eaf2fc; }
+.compact { min-height: 300px; }
+.art { position: absolute; inset: 0; width: 100%; height: 100%; }
+.content { position: relative; max-width: 1200px; margin: 0 auto; padding: 56px 24px 120px; }
+.compact .content { padding-bottom: 96px; }
+.eyebrow { display: inline-block; font-size: 12px; font-weight: 800; letter-spacing: 0.16em; color: var(--brand); margin-bottom: 12px; }
+.title { font-size: clamp(30px, 4.2vw, 46px); line-height: 1.25; font-weight: 800; letter-spacing: -0.035em; }
+.title em { font-style: normal; color: var(--brand); }
+.sub { margin: 14px 0 0; font-size: 17px; color: var(--sub); }
+.backLink { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 700; color: var(--brand); background: #fff; border: 1px solid var(--brand-line); padding: 7px 14px; border-radius: 999px; margin-bottom: 18px; }
+
+@media (max-width: 720px) {
+  .art { opacity: 0.45; }
+  .content { padding: 36px 16px 110px; }
+}

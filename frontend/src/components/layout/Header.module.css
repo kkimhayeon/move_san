@@ -1,0 +1,29 @@
+.header { position: sticky; top: 0; z-index: 20; background: rgba(255, 255, 255, 0.92); backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); }
+.headerInner { max-width: 1200px; margin: 0 auto; padding: 0 24px; height: 68px; display: flex; align-items: center; gap: 16px; }
+.logo { display: flex; align-items: center; gap: 10px; flex: none; }
+.logoImg { display: block; height: 42px; width: auto; }
+.nav { display: flex; gap: 2px; flex: 1 1 auto; margin-left: 28px; overflow-x: auto; scrollbar-width: none; }
+.nav::-webkit-scrollbar { display: none; }
+.navItem { position: relative; padding: 22px 13px; font-size: 15px; font-weight: 600; color: var(--sub); white-space: nowrap; }
+.navItem:hover { color: var(--ink); }
+.navItem.active { color: var(--brand); font-weight: 800; }
+.navItem.active::after { content: ''; position: absolute; left: 13px; right: 13px; bottom: 0; height: 3px; border-radius: 3px 3px 0 0; background: var(--brand); }
+.headerActions { flex: none; display: flex; align-items: center; justify-content: flex-end; gap: 14px; }
+.textLink { font-size: 14px; font-weight: 600; color: var(--sub); }
+.pillBtn { font-size: 14px; font-weight: 700; color: #fff; background: var(--brand); padding: 9px 18px; border-radius: 999px; }
+.pillBtn:hover { background: var(--brand-dark); }
+
+@media (max-width: 720px) {
+  .nav { margin-left: 0; order: 3; width: 100%; justify-content: space-between; }
+  .headerInner { padding: 10px 16px 0; height: auto; flex-wrap: wrap; }
+  .logo { flex: 1 1 auto; }
+  .headerActions { flex: none; gap: 10px; }
+  .navItem { padding: 12px 6px; font-size: 14px; }
+  .navItem.active::after { left: 6px; right: 6px; }
+}
+
+.userLabel { font-size: 13px; color: var(--sub); }
+.logoutBtn { border: 1px solid var(--brand-line); border-radius: 999px; padding: 8px 16px; background: #fff; color: var(--brand); font-size: 14px; font-weight: 600; cursor: pointer; }
+.logoutBtn:hover { background: var(--brand-soft); }
+.logoutBtn:disabled { opacity: 0.5; cursor: wait; }
+.logoutError { position: absolute; right: 16px; top: 100%; max-width: 280px; padding: 10px 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--card); color: var(--bad); box-shadow: var(--shadow); font-size: 13px; }

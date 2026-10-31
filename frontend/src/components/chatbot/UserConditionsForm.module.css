@@ -1,0 +1,23 @@
+.form { display: flex; flex-direction: column; gap: 14px; }
+.note { margin: 0; font-size: 12px; line-height: 1.6; color: var(--sub); }
+.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.field { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.field > span:first-child { font-size: 12px; font-weight: 700; color: var(--ink); display: flex; align-items: center; gap: 6px; }
+.field input,
+.field select { width: 100%; border: 1px solid var(--line); border-radius: 12px; padding: 9px 11px; font: inherit; font-size: 14px; color: var(--ink); background: #fff; outline: none; }
+.field input:focus,
+.field select:focus { border-color: var(--brand-line); box-shadow: 0 0 0 3px var(--brand-soft); }
+.money { position: relative; display: block; }
+.money input { padding-right: 44px; }
+.money i { position: absolute; right: 11px; top: 50%; transform: translateY(-50%); font-style: normal; font-size: 12px; color: #9aa6b8; pointer-events: none; }
+.calc { font-style: normal; font-size: 10px; font-weight: 700; color: var(--brand); background: var(--brand-soft); border-radius: 999px; padding: 1px 6px; }
+.actions { display: flex; gap: 8px; }
+.save { flex: 1; border: 0; border-radius: 12px; padding: 11px; font-weight: 700; color: #fff; background: var(--brand); cursor: pointer; }
+.save:hover { background: var(--brand-dark); }
+.clear { border: 1px solid var(--line); border-radius: 12px; padding: 11px 14px; background: #fff; color: var(--sub); cursor: pointer; }
+.saved { margin: 0; font-size: 11px; color: #9aa6b8; }
+
+@media (max-width: 720px) {
+  .field input,
+  .field select { font-size: 16px; }
+}

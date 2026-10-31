@@ -1,0 +1,101 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 20px;
+  background: rgba(15, 23, 42, 0.5);
+}
+
+.modal {
+  width: 100%;
+  max-width: 380px;
+  padding: 32px 28px;
+
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 20px;
+
+  text-align: center;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+}
+
+.icon {
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 20px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background: rgba(37, 99, 235, 0.08);
+  border-radius: 50%;
+
+  color: var(--brand);
+  font-size: 30px;
+}
+
+.title {
+  margin: 0 0 12px;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.description {
+  margin: 0;
+  color: var(--sub);
+  font-size: 14px;
+  line-height: 1.8;
+  overflow-wrap: anywhere;
+}
+
+.description strong {
+  color: var(--ink);
+}
+
+.notice {
+  margin: 20px 0;
+  padding: 12px;
+
+  background: var(--bg);
+  border-radius: 10px;
+
+  color: var(--sub);
+  font-size: 12px;
+}
+
+.confirmButton {
+  width: 100%;
+  min-height: 48px;
+
+  border: none;
+  border-radius: 12px;
+
+  background: var(--brand);
+  color: white;
+
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.confirmButton:hover {
+  filter: brightness(0.95);
+}
+
+.confirmButton:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 3px;
+}
+
+@media (max-width: 480px) {
+  .modal {
+    padding: 28px 20px;
+  }
+}
