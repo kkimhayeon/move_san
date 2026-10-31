@@ -1,5 +1,7 @@
-// 챗봇 · 사용자 조건 테스트 페이지 (localhost:3000/chatbot)
-// layout.tsx에 챗봇이 통합되기 전까지 여기서 확인해요.
+// 챗봇 · 사용자 조건 테스트 페이지.
+// 첫 배포에서는 라우트에 연결하지 않는다. 다시 열 때는
+// src/app/chatbot/page.tsx에서 이 컴포넌트를 렌더하고
+// src/constants/features.js의 CHATBOT_ENABLED를 true로 바꾼다.
 
 import ChatbotWidget from "@/components/chatbot/widget/ChatbotWidget";
 import UserConditionsForm from "@/components/chatbot/widget/UserConditionsForm";

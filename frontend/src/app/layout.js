@@ -6,6 +6,7 @@ import Footer from '@/components/layout/Footer';
 import AiChatLazy from '@/components/layout/AiChatLazy';
 import ScrollToTop from '@/components/layout/ScrollToTop';
 import NavigationProgress from '@/components/layout/NavigationProgress';
+import { CHATBOT_ENABLED } from '@/constants/features';
 import { SITE } from '@/constants/seo';
 
 const verification = {};
@@ -39,7 +40,7 @@ export default function RootLayout({ children }) {
         <main className="main">{children}</main>
         <Footer />
         <ScrollToTop />
-        <AiChatLazy />
+        {CHATBOT_ENABLED ? <AiChatLazy /> : null}
         </AuthProvider>
       </body>
     </html>
