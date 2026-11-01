@@ -1,0 +1,31 @@
+.track {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  z-index: 10000;
+  pointer-events: none;
+  background: transparent;
+  overflow: hidden;
+}
+
+.bar {
+  height: 100%;
+  width: 40%;
+  background: linear-gradient(90deg, var(--sky), var(--brand));
+  animation: run 1s ease-in-out infinite;
+}
+
+@keyframes run {
+  0% { transform: translateX(-120%); }
+  100% { transform: translateX(320%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bar {
+    width: 100%;
+    opacity: 0.7;
+    animation: none;
+  }
+}

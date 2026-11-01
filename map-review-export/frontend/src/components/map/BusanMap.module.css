@@ -1,0 +1,68 @@
+.layout { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(300px, 1fr); gap: 20px; align-items: start; }
+.toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+.toolbar h2 { font-size: 20px; }
+.select { min-height: 42px; padding: 0 12px; border-radius: 12px; border: 1px solid #d5dde8; background: #fff; font: inherit; font-weight: 600; color: var(--ink); }
+.wrap { position: relative; border-radius: 18px; background: linear-gradient(180deg, #f7fafe, #e6f0fb); padding: 8px; overflow: hidden; }
+.wrap svg { display: block; width: 100%; height: auto; }
+.wrap path { cursor: pointer; transition: fill 0.15s; }
+.landmark {
+  position: absolute;
+  left: 2%;
+  top: 3%;
+  width: min(42%, 280px);
+  height: auto;
+  aspect-ratio: 1;
+  object-fit: contain;
+  pointer-events: none;
+  z-index: 3;
+  filter: drop-shadow(0 18px 28px rgba(15, 47, 115, 0.28));
+  animation: landmarkRise 0.7s cubic-bezier(0.22, 1, 0.36, 1) both, landmarkFloat 3.2s ease-in-out 0.7s infinite;
+}
+@keyframes landmarkRise {
+  from { opacity: 0; transform: translateY(28%); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes landmarkFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .landmark { animation: landmarkRise 0.01s linear both; }
+}
+.label { position: absolute; transform: translate(-50%, -50%); border: 0; background: transparent; padding: 0; cursor: pointer; text-align: center; font-size: 11px; font-weight: 700; line-height: 1.15; color: var(--ink); text-shadow: 0 0 3px #fff, 0 0 3px #fff, 0 0 3px #fff; white-space: nowrap; }
+.label b { display: block; font-size: 12px; font-weight: 900; }
+.dark { color: #fff; text-shadow: 0 0 3px rgba(0, 0, 0, 0.35); }
+.picked { background: #0f1e33; color: #fff; text-shadow: none; padding: 4px 8px; border-radius: 8px; z-index: 2; }
+.sea { position: absolute; left: 30%; bottom: 5%; font-size: 13px; font-weight: 700; color: #6c93c4; letter-spacing: 0.3em; }
+.legend { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-top: 12px; font-size: 12px; color: var(--sub); }
+.legend i { display: inline-block; width: 14px; height: 14px; border-radius: 4px; margin-right: 5px; vertical-align: -2px; }
+.panelBig { font-size: 44px; font-weight: 900; color: var(--brand); letter-spacing: -0.04em; line-height: 1.1; }
+.panelBig small { font-size: 18px; font-weight: 800; margin-left: 2px; }
+.statGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.stat { border-radius: 14px; background: #f6f8fb; padding: 12px 14px; }
+.stat b { display: block; font-size: 20px; font-weight: 800; }
+.save { border-radius: 14px; background: var(--brand-soft); padding: 14px 16px; font-size: 14px; }
+.save b { color: var(--brand-dark); }
+.top5 li { display: flex; align-items: center; gap: 12px; padding: 9px 0; border-top: 1px solid var(--line); cursor: pointer; }
+.top5 li:first-child { border-top: 0; }
+.top5 ol { list-style: none; margin: 0; padding: 0; }
+.rank { width: 26px; height: 26px; border-radius: 8px; display: grid; place-items: center; font-size: 13px; font-weight: 800; background: var(--brand-soft); color: var(--brand); }
+.bar { flex: 1; height: 8px; border-radius: 999px; background: #eef2f7; overflow: hidden; }
+.bar span { display: block; height: 100%; background: linear-gradient(90deg, #8fc0ff, #2563eb); border-radius: 999px; }
+.dong { display: inline-block; font-size: 12px; padding: 3px 10px; border-radius: 999px; background: #fff; border: 1px solid var(--line); color: var(--sub); }
+.spots { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 12px; }
+.spot { border-radius: 16px; overflow: hidden; transition: background 0.2s; }
+.spotBtn { width: 100%; min-height: 120px; border: 0; background: transparent; padding: 14px; text-align: left; display: flex; flex-direction: column; gap: 6px; cursor: pointer; color: inherit; }
+.spotIcon { width: 34px; height: 34px; border-radius: 10px; background: rgba(255, 255, 255, 0.75); display: grid; place-items: center; }
+.spotLinks { display: flex; gap: 6px; padding: 0 14px 14px; }
+.spotLinks a { flex: 1; text-align: center; font-size: 12px; font-weight: 700; padding: 7px 4px; border-radius: 9px; background: #8fc0ff; color: var(--ink); }
+
+@media (max-width: 900px) {
+  .layout { grid-template-columns: 1fr; }
+}
+@media (max-width: 720px) {
+  .statGrid { grid-template-columns: 1fr; }
+  .label { font-size: 9px; }
+  .label b { display: none; }
+  .picked b { display: block; font-size: 10px; }
+}

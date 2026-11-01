@@ -1,0 +1,32 @@
+import Hero from '@/components/common/Hero';
+import BenefitBrowser from '@/components/policy/BenefitBrowser';
+import WelcomePackBanner from '@/components/policy/WelcomePackBanner';
+import { ROUTES } from '@/constants/routes';
+import { pageMeta } from '@/utils/seo';
+import styles from './benefits.module.css';
+
+export const metadata = pageMeta({
+  title: '청년 혜택',
+  description: '부산시와 기관의 청년 지원사업을 카테고리와 키워드로 찾아볼 수 있습니다.',
+  path: ROUTES.benefits,
+});
+
+export default function BenefitsPage() {
+  return (
+    <>
+      <Hero
+        compact
+        eyebrow="YOUTH BENEFITS"
+        title={<>당신의 첫걸음에,<br /><em>혜택을 더하다</em></>}
+        subtitle="부산에서 시작하는 새로운 일상. 놓치면 아쉬운 지원을 한곳에 모았어요."
+      />
+
+      <div className="page">
+        <div className={`lift stack ${styles.lift}`} style={{ gap: 28 }}>
+          <WelcomePackBanner />
+          <BenefitBrowser />
+        </div>
+      </div>
+    </>
+  );
+}

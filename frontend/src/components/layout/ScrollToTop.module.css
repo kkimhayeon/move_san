@@ -1,0 +1,34 @@
+/* AI 채팅 FAB(right 24 / bottom 24, 62px) 바로 위 */
+.btn {
+  position: fixed;
+  right: 24px;
+  bottom: 100px;
+  z-index: 39;
+  width: 48px;
+  height: 48px;
+  padding: 0;
+  border-radius: 50%;
+  border: 1px solid #E2E8F0;
+  background: #FFFFFF;
+  color: #0F172A;
+  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.12);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  transition: transform 0.15s, background 0.15s, color 0.15s;
+}
+
+.btn:hover {
+  transform: translateY(-2px);
+  background: #F8FAFC;
+  color: #2563EB;
+}
+
+@media (max-width: 720px) {
+  .btn {
+    right: 16px;
+    bottom: 88px;
+    width: 44px;
+    height: 44px;
+  }
+}

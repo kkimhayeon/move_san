@@ -1,0 +1,4 @@
+/* 청년 혜택: Hero와 검색 영역 간격 */
+:global(.lift).lift {
+  margin-top: 12px;
+}
