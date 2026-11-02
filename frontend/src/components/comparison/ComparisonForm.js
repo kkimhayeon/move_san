@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import { fetchComparison, toComparisonBody } from '@/api/comparison';
@@ -158,6 +158,7 @@ export default function ComparisonForm() {
     beginCompare,
     setResult,
     setCompareError,
+    clearResult,
     reset,
   } = useComparisonInputs();
   const { values, missing, complete } = useNumbers();
@@ -166,6 +167,11 @@ export default function ComparisonForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [mapOpen, setMapOpen] = useState(false);
+
+  // 다시 계산하기로 돌아올 때 결과만 정리 (입력은 이미 resetInputs로 비움)
+  useEffect(() => {
+    clearResult();
+  }, [clearResult]);
 
   const fieldProps = {
     inputs,

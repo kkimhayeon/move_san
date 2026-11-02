@@ -128,6 +128,11 @@ export const useComparisonStore = create((set) => ({
   setResult: (result) => set({ result, status: 'ready', error: null }),
   setCompareError: (error) => set({ result: null, status: 'error', error }),
   clearResult: () => set({ result: null, status: 'idle', error: null }),
+  /** 결과 화면을 비우지 않고 입력만 초기화 (다시 계산하기용) */
+  resetInputs: () => set({
+    inputs: { ...EMPTY },
+    payLinked: true,
+  }),
   reset: () => set({
     inputs: { ...EMPTY },
     payLinked: true,
@@ -175,6 +180,7 @@ export function useComparisonInputs() {
     setResult: state.setResult,
     setCompareError: state.setCompareError,
     clearResult: state.clearResult,
+    resetInputs: state.resetInputs,
     reset: state.reset,
   })));
 }

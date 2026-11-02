@@ -36,10 +36,10 @@ export function compareDetailed(v) {
 
 // 생활비 세부 항목 (지출 비중: 가계동향 39세 이하 근로자가구, 가격 비율: 행안부 지방물가 부산/서울)
 export const LIVING_ITEMS = [
-  { label: '식료품·장보기', shortLabel: '식료품', share: 0.117, ratio: 0.930, example: '쌀·고기·채소 10품목 기준' },
-  { label: '외식', shortLabel: '외식', share: 0.230, ratio: 0.892, example: '냉면 12,573원 → 11,726원' },
-  { label: '개인서비스', shortLabel: '개인서비스', share: 0.092, ratio: 0.835, example: '미용 컷트 24,224원 → 19,532원' },
-  { label: '그 외 (교통·통신·의류 등)', shortLabel: '그 외', share: 0.561, ratio: 1.0, example: '서울·부산 같은 가격으로 처리' },
+  { label: '식료품·장보기', shortLabel: '식료품', share: 0.117, ratio: 0.930, example: 'ex) 쌀·고기·채소 10품목' },
+  { label: '외식', shortLabel: '외식', share: 0.230, ratio: 0.892, example: 'ex) 냉면 12,573원 → 11,726원' },
+  { label: '개인서비스', shortLabel: '개인서비스', share: 0.092, ratio: 0.835, example: 'ex) 미용 컷트 24,224원 → 19,532원' },
+  { label: '그 외 (교통·통신·의류 등)', shortLabel: '그 외', share: 0.561, ratio: 1.0, example: 'ex) 교통·통신·의류 등' },
 ];
 
 export function livingDetail(living) {
