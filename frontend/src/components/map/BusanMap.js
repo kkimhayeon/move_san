@@ -1,11 +1,11 @@
 'use client';
 
-// 부산 구·군별 월세 중앙값 지도 (F-03) + 동네 정보
+// 부산 구·군별 월세 중앙값 지도 (F-03)
 // 월세·순위는 Flask GET /api/v1/housing/* 응답을 사용한다. SVG path는 GU 상수 유지.
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { fetchHousingDistricts, fetchHousingRankings } from '@/api/housing';
-import { GU, MAP_HEIGHT, SPOTS, SPOT_TYPES } from '@/constants/busan';
+import { GU, MAP_HEIGHT } from '@/constants/busan';
 import { ROUTES } from '@/constants/routes';
 import { useComparisonInputs, useNumbers } from '@/stores/comparison';
 import { getUserErrorMessage, isAbortError } from '@/utils/errors';
@@ -82,7 +82,6 @@ export default function BusanMap() {
   const { setField } = useComparisonInputs();
   const { values } = useNumbers();
   const [picked, setPicked] = useState('해운대구');
-  const [flip, setFlip] = useState('');
 
   const [districts, setDistricts] = useState({
     loading: true,
@@ -147,7 +146,6 @@ export default function BusanMap() {
     const onPick = (e) => {
       if (GU.some((g) => g.name === e.detail)) {
         setPicked(e.detail);
-        setFlip('');
       }
     };
     window.addEventListener('movesan:pick-gu', onPick);
@@ -173,7 +171,6 @@ export default function BusanMap() {
 
   const pick = useCallback((name) => {
     setPicked(name);
-    setFlip('');
   }, []);
 
   const sel = GU.find((g) => g.name === picked) || GU[0];
@@ -372,42 +369,6 @@ export default function BusanMap() {
           </section>
         </aside>
       </div>
-
-      <section className="card section stack">
-        <div className="section-head" style={{ marginBottom: 0 }}>
-          <h2>{sel.name}엔 이런 게 있어요</h2>
-          <span className="small muted">카드를 누르면 한 줄 정보와 링크가 나와요</span>
-        </div>
-        <div className="chips" style={{ gap: 6, padding: '10px 12px', background: 'var(--bg)', borderRadius: 12 }}>
-          <span className="small" style={{ fontWeight: 700 }}>동네 {sel.dongs.length}곳</span>
-          {sel.dongs.map((d) => <span key={d} className={styles.dong}>{d}</span>)}
-        </div>
-        <div className={styles.spots}>
-          {(SPOTS[sel.name] || []).map(([name, type, fact], i) => {
-            const key = sel.name + i;
-            const open = flip === key;
-            const t = SPOT_TYPES[type];
-            const q = encodeURIComponent(`부산 ${name}`);
-            return (
-              <div key={key} className={styles.spot} style={{ background: open ? 'var(--ink)' : t.bg, color: open ? '#fff' : 'var(--ink)' }}>
-                <button type="button" className={styles.spotBtn} aria-pressed={open} onClick={() => setFlip(open ? '' : key)}>
-                  <span className={styles.spotIcon}>
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0F1E33" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={t.icon} /></svg>
-                  </span>
-                  <strong style={{ fontSize: open ? 13 : 15 }}>{name}</strong>
-                  <span style={{ fontSize: open ? 13 : 12, opacity: open ? 1 : 0.75 }}>{open ? fact : type}</span>
-                </button>
-                {open && (
-                  <div className={styles.spotLinks}>
-                    <a href={`https://search.naver.com/search.naver?query=${q}`} target="_blank" rel="noopener noreferrer">더 알아보기 ↗</a>
-                    <a href={`https://map.kakao.com/?q=${q}`} target="_blank" rel="noopener noreferrer">지도 보기 ↗</a>
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      </section>
     </div>
   );
 }

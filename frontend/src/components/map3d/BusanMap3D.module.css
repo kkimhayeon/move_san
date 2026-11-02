@@ -221,68 +221,6 @@
   border-radius: 999px;
 }
 
-.dong {
-  display: inline-block;
-  font-size: 12px;
-  padding: 3px 10px;
-  border-radius: 999px;
-  background: #fff;
-  border: 1px solid var(--line);
-  color: var(--sub);
-}
-
-.spots {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
-  gap: 12px;
-}
-
-.spot {
-  border-radius: 16px;
-  overflow: hidden;
-  transition: background 0.2s;
-}
-
-.spotBtn {
-  width: 100%;
-  min-height: 120px;
-  border: 0;
-  background: transparent;
-  padding: 14px;
-  text-align: left;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  cursor: pointer;
-  color: inherit;
-}
-
-.spotIcon {
-  width: 34px;
-  height: 34px;
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.75);
-  display: grid;
-  place-items: center;
-}
-
-.spotLinks {
-  display: flex;
-  gap: 6px;
-  padding: 0 14px 14px;
-}
-
-.spotLinks a {
-  flex: 1;
-  text-align: center;
-  font-size: 12px;
-  font-weight: 700;
-  padding: 7px 4px;
-  border-radius: 9px;
-  background: #8fc0ff;
-  color: var(--ink);
-}
-
 .lmBlock {
   border-radius: 16px;
   background: var(--brand-soft);

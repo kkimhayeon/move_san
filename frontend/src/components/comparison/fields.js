@@ -21,6 +21,13 @@ export const SEOUL_FIELDS = [
 ];
 
 export const BUSAN_FIELDS = [
-  { key: 'busanPay', icon: 'pay', label: '월급', placeholder: '예) 420', mirror: 'seoulPay' },
+  {
+    key: 'busanPay',
+    icon: 'pay',
+    label: '월급',
+    placeholder: '예) 380',
+    mirror: 'seoulPay',
+    stepper: true,
+  },
   { key: 'busanRent', icon: 'rent', label: '월세 (주거비)', placeholder: '예) 55', hint: 'map' },
 ];
