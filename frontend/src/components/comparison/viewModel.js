@@ -1,12 +1,12 @@
 // 결과 화면이 그릴 숫자. 금액·차이는 API result를 그대로 쓰고, 표/차트용 1년 표시만 월×12로 맞춘다.
-import { livingDetail } from '@/utils/calc';
-import { fmtInt } from '@/utils/formatMoney';
+import { livingDetail, 부산물가절감률 } from '@/utils/calc';
+import { fmt, fmtInt } from '@/utils/formatMoney';
 
 export const YEAR_MONTHS = 12;
 const SAME_MANWON = 0.5;
 
 const ITEM_LABELS = {
-  pay: '세후 월급',
+  pay: '월급',
   rent: '월세',
   living: '생활비',
 };
@@ -28,29 +28,49 @@ function leftoverWord(cost, impact) {
   return impact > 0 ? '더 벌어요' : '덜 벌어요';
 }
 
+function monthlyHint(seoul, busan) {
+  return `월 ${fmt(seoul)} → ${fmt(busan)}만원`;
+}
+
 export function buildComparisonView(apiResult) {
   const seoul = apiResult.seoul;
   const busan = apiResult.busan;
   const livingRatio = apiResult.living_ratio;
   const diffMap = Object.fromEntries((apiResult.differences || []).map((item) => [item.item, item]));
+  const livingSavePct = livingRatio != null
+    ? Math.round((1 - Number(livingRatio)) * 1000) / 10
+    : 부산물가절감률;
 
   const specs = [
-    { key: 'pay', label: ITEM_LABELS.pay, waterfallLabel: '월급', monthly: (side) => side.pay },
-    { key: 'rent', label: ITEM_LABELS.rent, waterfallLabel: '월세', cost: true, chart: 'rent', hint: '누르면 월세 그래프', monthly: (side) => side.rent },
+    {
+      key: 'pay',
+      label: ITEM_LABELS.pay,
+      monthly: (side) => side.pay,
+      detailHint: (s, b) => monthlyHint(s.pay, b.pay),
+    },
+    {
+      key: 'rent',
+      label: ITEM_LABELS.rent,
+      cost: true,
+      chart: 'rent',
+      monthly: (side) => side.rent,
+      detailHint: (s, b) => monthlyHint(s.rent, b.rent),
+    },
     {
       key: 'living',
       label: ITEM_LABELS.living,
-      waterfallLabel: '생활비',
       cost: true,
       chart: 'living',
-      hint: `부산은 서울 생활비 × ${livingRatio} · 누르면 세부 항목`,
       monthly: (side) => side.living,
+      detailHint: () => `서울보다 ${livingSavePct}% 저렴`,
     },
   ];
 
   const rows = specs.map((spec) => {
-    const seoulYear = perYear(spec.monthly(seoul));
-    const busanYear = perYear(spec.monthly(busan));
+    const seoulMonth = spec.monthly(seoul);
+    const busanMonth = spec.monthly(busan);
+    const seoulYear = perYear(seoulMonth);
+    const busanYear = perYear(busanMonth);
     const cityDelta = busanYear - seoulYear;
     const monthlyEffect = diffMap[spec.key]?.monthly_remaining_effect;
     const leftoverImpact = monthlyEffect != null
@@ -59,10 +79,12 @@ export function buildComparisonView(apiResult) {
     return {
       key: spec.key,
       label: spec.label,
-      waterfallLabel: spec.waterfallLabel,
       cost: Boolean(spec.cost),
       chart: spec.chart || null,
       hint: spec.hint || null,
+      detailHint: spec.detailHint(seoul, busan),
+      seoulMonth,
+      busanMonth,
       seoulYear,
       busanYear,
       cityDelta,
@@ -109,6 +131,7 @@ export function buildComparisonView(apiResult) {
     gain,
     top,
     livingRows,
+    livingSavePct,
     seoulLeftYear: seoul.annual_remaining,
     busanLeftYear: busan.annual_remaining,
   };
