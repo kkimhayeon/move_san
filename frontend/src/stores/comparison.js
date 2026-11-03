@@ -30,6 +30,8 @@ export function missingPrompt(keys) {
 }
 
 const KEY = 'busansallim-inputs';
+/** 부산 월급 스테퍼 단위 (화면 단위: 만원) */
+export const BUSAN_PAY_STEP = 10;
 
 function asText(value) {
   if (typeof value === 'string') return value;
@@ -37,10 +39,17 @@ function asText(value) {
   return null;
 }
 
-function readSavedInputs() {
+function moneyText(value) {
+  if (!Number.isFinite(value)) return '';
+  return Number.isInteger(value) ? String(value) : String(value);
+}
+
+function readSaved() {
   try {
     const saved = JSON.parse(sessionStorage.getItem(KEY) || 'null');
-    if (!saved || typeof saved !== 'object') return { ...EMPTY };
+    if (!saved || typeof saved !== 'object') {
+      return { inputs: { ...EMPTY }, payLinked: true };
+    }
     const inputs = { ...EMPTY };
     for (const key of Object.keys(EMPTY)) {
       const text = asText(saved[key]);
@@ -51,38 +60,105 @@ function readSavedInputs() {
       const legacy = asText(saved.living);
       if (legacy) inputs.seoulLiving = legacy;
     }
-    return inputs;
+
+    let payLinked = typeof saved.payLinked === 'boolean'
+      ? saved.payLinked
+      : (!inputs.busanPay || inputs.busanPay === inputs.seoulPay);
+
+    // 연동 중이면 서울 월급을 부산에도 맞춰 둔다.
+    if (payLinked && inputs.seoulPay) {
+      inputs.busanPay = inputs.seoulPay;
+    }
+
+    return { inputs, payLinked };
   } catch {
-    return { ...EMPTY };
+    return { inputs: { ...EMPTY }, payLinked: true };
   }
+}
+
+function clearResultSlice() {
+  return { result: null, status: 'idle', error: null };
 }
 
 export const useComparisonStore = create((set) => ({
   inputs: { ...EMPTY },
+  /** 서울 월급 변경 시 부산 월급도 같이 맞출지 */
+  payLinked: true,
   result: null,
   /** idle | loading | ready | error */
   status: 'idle',
   error: null,
   loaded: false,
-  setField: (key, value) => set((state) => ({
-    inputs: { ...state.inputs, [key]: value },
-    result: null,
-    status: 'idle',
-    error: null,
+  setField: (key, value) => set((state) => {
+    if (key === 'seoulPay') {
+      const inputs = { ...state.inputs, seoulPay: value };
+      if (state.payLinked) inputs.busanPay = value;
+      return { inputs, ...clearResultSlice() };
+    }
+    if (key === 'busanPay') {
+      return {
+        inputs: { ...state.inputs, busanPay: value },
+        payLinked: false,
+        ...clearResultSlice(),
+      };
+    }
+    return {
+      inputs: { ...state.inputs, [key]: value },
+      ...clearResultSlice(),
+    };
+  }),
+  setInputs: (inputs) => set({ inputs, ...clearResultSlice() }),
+  linkBusanPayToSeoul: () => set((state) => ({
+    inputs: { ...state.inputs, busanPay: state.inputs.seoulPay },
+    payLinked: true,
+    ...clearResultSlice(),
   })),
-  setInputs: (inputs) => set({ inputs, result: null, status: 'idle', error: null }),
+  nudgeBusanPay: (delta) => set((state) => {
+    const current = parseMoney(state.inputs.busanPay)
+      ?? parseMoney(state.inputs.seoulPay)
+      ?? 0;
+    const next = Math.max(0, current + delta);
+    return {
+      inputs: { ...state.inputs, busanPay: moneyText(next) },
+      payLinked: false,
+      ...clearResultSlice(),
+    };
+  }),
   beginCompare: () => set({ result: null, status: 'loading', error: null }),
   setResult: (result) => set({ result, status: 'ready', error: null }),
   setCompareError: (error) => set({ result: null, status: 'error', error }),
   clearResult: () => set({ result: null, status: 'idle', error: null }),
-  reset: () => set({ inputs: { ...EMPTY }, result: null, status: 'idle', error: null }),
-  hydrate: () => set({ inputs: readSavedInputs(), loaded: true }),
+  /** 결과 화면을 비우지 않고 입력만 초기화 (다시 계산하기용) */
+  resetInputs: () => set({
+    inputs: { ...EMPTY },
+    payLinked: true,
+  }),
+  reset: () => set({
+    inputs: { ...EMPTY },
+    payLinked: true,
+    result: null,
+    status: 'idle',
+    error: null,
+  }),
+  hydrate: () => {
+    const saved = readSaved();
+    set({ inputs: saved.inputs, payLinked: saved.payLinked, loaded: true });
+  },
 }));
 
 useComparisonStore.subscribe((state, prev) => {
   if (!state.loaded) return;
-  if (prev?.loaded && state.inputs === prev.inputs) return;
-  try { sessionStorage.setItem(KEY, JSON.stringify(state.inputs)); } catch {}
+  if (
+    prev?.loaded
+    && state.inputs === prev.inputs
+    && state.payLinked === prev.payLinked
+  ) return;
+  try {
+    sessionStorage.setItem(KEY, JSON.stringify({
+      ...state.inputs,
+      payLinked: state.payLinked,
+    }));
+  } catch {}
 });
 
 export function ComparisonHydration() {
@@ -95,12 +171,16 @@ export function ComparisonHydration() {
 export function useComparisonInputs() {
   return useComparisonStore(useShallow((state) => ({
     inputs: state.inputs,
+    payLinked: state.payLinked,
     setField: state.setField,
     setInputs: state.setInputs,
+    linkBusanPayToSeoul: state.linkBusanPayToSeoul,
+    nudgeBusanPay: state.nudgeBusanPay,
     beginCompare: state.beginCompare,
     setResult: state.setResult,
     setCompareError: state.setCompareError,
     clearResult: state.clearResult,
+    resetInputs: state.resetInputs,
     reset: state.reset,
   })));
 }

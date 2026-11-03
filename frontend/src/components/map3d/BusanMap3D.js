@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { fetchHousingDistricts, fetchHousingRankings } from '@/api/housing';
-import { GU, SPOTS, SPOT_TYPES } from '@/constants/busan';
 import {
   CHIP_ORDER,
   idFromGuName,
@@ -69,7 +68,6 @@ export default function BusanMap3D() {
 
   /** 영문 ID. null = 전체 보기 */
   const [selectedId, setSelectedId] = useState(null);
-  const [flip, setFlip] = useState('');
 
   const [districts, setDistricts] = useState({
     loading: true,
@@ -131,18 +129,15 @@ export default function BusanMap3D() {
   const pickByName = useCallback((name) => {
     if (!name) {
       setSelectedId(null);
-      setFlip('');
       return;
     }
     const id = idFromGuName(name);
     if (!id) return;
     setSelectedId(id);
-    setFlip('');
   }, []);
 
   const pickById = useCallback((id) => {
     setSelectedId(id);
-    setFlip('');
   }, []);
 
   useEffect(() => {
@@ -178,7 +173,6 @@ export default function BusanMap3D() {
   }, [byCode]);
 
   const selectedName = nameFromId(selectedId);
-  const selGu = selectedName ? GU.find((g) => g.name === selectedName) : null;
   const selData = selectedName ? dataOfName(selectedName) : null;
   const selRent = selData?.median_rent ?? null;
   const selCount = selData?.sample_count ?? null;
@@ -370,61 +364,6 @@ export default function BusanMap3D() {
           </section>
         </aside>
       </div>
-
-      {selGu ? (
-        <section className="card section stack">
-          <div className="section-head" style={{ marginBottom: 0 }}>
-            <h2>{selGu.name}엔 이런 게 있어요</h2>
-            <span className="small muted">카드를 누르면 한 줄 정보와 링크가 나와요</span>
-          </div>
-          <div className="chips" style={{ gap: 6, padding: '10px 12px', background: 'var(--bg)', borderRadius: 12 }}>
-            <span className="small" style={{ fontWeight: 700 }}>동네 {selGu.dongs.length}곳</span>
-            {selGu.dongs.map((d) => <span key={d} className={styles.dong}>{d}</span>)}
-          </div>
-          <div className={styles.spots}>
-            {(SPOTS[selGu.name] || []).map(([name, type, fact], i) => {
-              const key = selGu.name + i;
-              const open = flip === key;
-              const t = SPOT_TYPES[type];
-              const q = encodeURIComponent(`부산 ${name}`);
-              return (
-                <div
-                  key={key}
-                  className={styles.spot}
-                  style={{ background: open ? 'var(--ink)' : t.bg, color: open ? '#fff' : 'var(--ink)' }}
-                >
-                  <button
-                    type="button"
-                    className={styles.spotBtn}
-                    aria-pressed={open}
-                    onClick={() => setFlip(open ? '' : key)}
-                  >
-                    <span className={styles.spotIcon}>
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0F1E33" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                        <path d={t.icon} />
-                      </svg>
-                    </span>
-                    <strong style={{ fontSize: open ? 13 : 15 }}>{name}</strong>
-                    <span style={{ fontSize: open ? 13 : 12, opacity: open ? 1 : 0.75 }}>{open ? fact : type}</span>
-                  </button>
-                  {open && (
-                    <div className={styles.spotLinks}>
-                      <a href={`https://search.naver.com/search.naver?query=${q}`} target="_blank" rel="noopener noreferrer">더 알아보기 ↗</a>
-                      <a href={`https://map.kakao.com/?q=${q}`} target="_blank" rel="noopener noreferrer">지도 보기 ↗</a>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </section>
-      ) : (
-        <section className="card section">
-          <p className="small muted" style={{ margin: 0 }}>
-            지역을 선택하면 행정동 목록과 명소 카드가 여기에 표시돼요.
-          </p>
-        </section>
-      )}
     </div>
   );
 }
