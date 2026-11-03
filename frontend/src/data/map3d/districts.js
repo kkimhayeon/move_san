@@ -80,6 +80,7 @@ export const DISTRICTS = {
     desc: '송도 바다 위를 가로지르는 케이블카예요.\n발아래로 바다가 내려다보여요.',
     at: [-1.35, 5.0],
     small: true,
+    focusSpan: 0.85,
     model: '/models/sondocablecar.glb',
     modelScale: 1,
     modelFit: 1.5,

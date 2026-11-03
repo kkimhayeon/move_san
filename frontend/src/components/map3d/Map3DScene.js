@@ -12,23 +12,56 @@ import { heightFor } from './heightFor';
 
 const TARGET = new THREE.Vector3(-0.5, 0, 1.9);
 const HOME_DIR = new THREE.Vector3(0, 22, 18.5);
-const FOCUS_ZOOM = 0.7;
+/** 기준 크기(월드 단위)의 구를 고를 때 쓰는 줌. 작을수록 더 가까이. */
+const FOCUS_ZOOM = 0.62;
+const FOCUS_SPAN_REF = 2.1;
+const FOCUS_ZOOM_MIN = 0.28;
+const FOCUS_ZOOM_MAX = 0.72;
 
 function homeView(aspect) {
   const k = Math.max(1, 1.35 / aspect);
   return { pos: TARGET.clone().add(HOME_DIR.clone().multiplyScalar(k)), target: TARGET.clone() };
 }
 
-function focusView(focus, aspect) {
+/** 구 경계 AABB 반경. 길쭉한 구(서구 등)도 과대평가되지 않게 박스 기준으로 잰다. */
+function districtSpan(geo) {
+  if (!geo?.polys) return FOCUS_SPAN_REF;
+  let minX = Infinity;
+  let maxX = -Infinity;
+  let minZ = Infinity;
+  let maxZ = -Infinity;
+  for (const poly of geo.polys) {
+    for (const ring of poly) {
+      for (let i = 0; i < ring.length; i += 2) {
+        const x = ring[i];
+        const z = ring[i + 1];
+        if (x < minX) minX = x;
+        if (x > maxX) maxX = x;
+        if (z < minZ) minZ = z;
+        if (z > maxZ) maxZ = z;
+      }
+    }
+  }
+  if (!Number.isFinite(minX)) return FOCUS_SPAN_REF;
+  return Math.max(0.35, 0.5 * Math.hypot(maxX - minX, maxZ - minZ));
+}
+
+function focusZoom(span, aspect) {
+  const sized = FOCUS_ZOOM * (span / FOCUS_SPAN_REF);
+  const zoom = Math.min(FOCUS_ZOOM_MAX, Math.max(FOCUS_ZOOM_MIN, sized));
+  return zoom * Math.max(1, 1.2 / aspect);
+}
+
+function focusView(focus, aspect, span = FOCUS_SPAN_REF) {
   const t = new THREE.Vector3(...focus);
   return {
-    pos: t.clone().add(HOME_DIR.clone().multiplyScalar(FOCUS_ZOOM * Math.max(1, 1.2 / aspect))),
+    pos: t.clone().add(HOME_DIR.clone().multiplyScalar(focusZoom(span, aspect))),
     target: t,
   };
 }
 
 /** 선택·해제로 카메라 이동. 사용자 드래그 시 자동 이동 중단. 리사이즈 시 구도 재맞춤. */
-function CameraRig({ focus, reduceMotion }) {
+function CameraRig({ focus, focusSpan, reduceMotion }) {
   const { camera, size, controls } = useThree();
   const fly = useRef({
     t: 1,
@@ -38,7 +71,9 @@ function CameraRig({ focus, reduceMotion }) {
     toT: new THREE.Vector3(),
   });
   const first = useRef(true);
-  const focusKey = focus ? `${focus[0]},${focus[1]},${focus[2]}` : 'home';
+  const focusKey = focus
+    ? `${focus[0]},${focus[1]},${focus[2]},${Number(focusSpan).toFixed(3)}`
+    : 'home';
   const sizeKey = `${size.width}x${size.height}`;
 
   useEffect(() => {
@@ -52,7 +87,7 @@ function CameraRig({ focus, reduceMotion }) {
 
   useEffect(() => {
     const aspect = size.width / Math.max(1, size.height);
-    const to = focus ? focusView(focus, aspect) : homeView(aspect);
+    const to = focus ? focusView(focus, aspect, focusSpan) : homeView(aspect);
 
     if (first.current || reduceMotion || !controls) {
       camera.position.copy(to.pos);
@@ -95,10 +130,19 @@ function SceneContent({
   const [hovered, setHovered] = useState(null);
 
   let focus = null;
+  let focusSpan = FOCUS_SPAN_REF;
   if (selected && DISTRICTS[selected] && GEO[selected]) {
     const d = DISTRICTS[selected];
-    const [x, z] = d.at || GEO[selected].c;
+    const geo = GEO[selected];
+    const [x, z] = d.at || geo.c;
     focus = [x, d.sea ? 0.4 : heightFor(rentsById?.[selected]) + 0.6, z];
+    // focusSpan 오버라이드 > small 구 보정 > 경계 크기
+    if (d.focusSpan != null) {
+      focusSpan = d.focusSpan;
+    } else {
+      const span = districtSpan(geo);
+      focusSpan = d.small ? span * 0.58 : span;
+    }
   }
 
   return (
@@ -152,7 +196,7 @@ function SceneContent({
         minDistance={7}
         maxDistance={60}
       />
-      <CameraRig focus={focus} reduceMotion={reduceMotion} />
+      <CameraRig focus={focus} focusSpan={focusSpan} reduceMotion={reduceMotion} />
     </>
   );
 }

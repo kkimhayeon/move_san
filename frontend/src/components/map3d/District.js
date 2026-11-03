@@ -249,28 +249,34 @@ export default function District({
       m.rotation.set(bt * 8, bt * 6, 0);
     });
 
+    // 선택 시 라벨을 랜드마크(실제 fit 높이) 위로 올려 모델과 겹치지 않게 한다.
     const lyTarget = isSel
-      ? ground + (info.model ? 1.0 : 1.45) * lmScale + 0.15
+      ? ground + (info.model ? modelFit : 1.45) * lmScale + 0.55
       : (info.sea ? 0 : a.h * 1.035) + 0.2;
     const L = label.current;
     L.position.x += ((isSel ? lx : cx) - L.position.x) * k;
     L.position.z += ((isSel ? lz : cz) - L.position.z) * k;
     L.position.y += (lyTarget - L.position.y) * k;
 
-    L.getWorldPosition(_proj);
-    _proj.project(camera);
-    const screenX = (_proj.x * 0.5 + 0.5) * size.width;
-    const screenY = (-_proj.y * 0.5 + 0.5) * size.height;
-    const inFront = _proj.z < 1;
-    setDistrictLabel(id, inFront ? {
-      x: screenX,
-      y: screenY,
-      name: geo.name,
-      sub: isSel ? info.lm : formatTagRent(rent, rentLoading),
-      on: isSel,
-      dim,
-      z: isSel ? 30 : isHover ? 20 : 10,
-    } : null);
+    // 구를 선택한 동안에는 해당 구 라벨만 보여 다른 구 월세 태그를 가린다.
+    if (selected && !isSel) {
+      setDistrictLabel(id, null);
+    } else {
+      L.getWorldPosition(_proj);
+      _proj.project(camera);
+      const screenX = (_proj.x * 0.5 + 0.5) * size.width;
+      const screenY = (-_proj.y * 0.5 + 0.5) * size.height;
+      const inFront = _proj.z < 1;
+      setDistrictLabel(id, inFront ? {
+        x: screenX,
+        y: screenY,
+        name: geo.name,
+        sub: isSel ? info.lm : formatTagRent(rent, rentLoading),
+        on: isSel,
+        dim: false,
+        z: isSel ? 30 : isHover ? 20 : 10,
+      } : null);
+    }
   });
 
   const handlers = {

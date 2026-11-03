@@ -13,7 +13,11 @@ export default function DistrictLabels() {
         <div
           key={id}
           className={`${styles.tag}${L.on ? ` ${styles.on}` : ''}${L.dim ? ` ${styles.dim}` : ''}`}
-          style={{ transform: `translate(${L.x}px, ${L.y}px) translate(-50%, -50%)` }}
+          style={{
+            transform: L.on
+              ? `translate(${L.x}px, ${L.y}px) translate(-50%, calc(-100% - 12px))`
+              : `translate(${L.x}px, ${L.y}px) translate(-50%, -50%)`,
+          }}
         >
           <b>{L.name}</b>
           {L.sub ? <span>{L.sub}</span> : null}

@@ -1,11 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import { fetchComparison, toComparisonBody } from '@/api/comparison';
 import { ROUTES } from '@/constants/routes';
 import {
+  BUSAN_PAY_STEP,
   missingPrompt,
   useComparisonInputs,
   useNumbers,
@@ -53,7 +54,16 @@ function FieldHint({ hint, onOpenMap }) {
   return null;
 }
 
-function MoneyField({ field, inputs, invalid, onChange, onOpenMap }) {
+function MoneyField({
+  field,
+  inputs,
+  invalid,
+  onChange,
+  onOpenMap,
+  onNudge,
+}) {
+  const showStepper = Boolean(field.stepper);
+
   return (
     <label className={styles.field}>
       <span className={styles.label}>
@@ -63,7 +73,7 @@ function MoneyField({ field, inputs, invalid, onChange, onOpenMap }) {
         {field.label}
       </span>
 
-      <span className={styles.money}>
+      <span className={showStepper ? `${styles.money} ${styles.moneyStepper}` : styles.money}>
         <input
           inputMode="decimal"
           value={inputs[field.key] ?? ''}
@@ -74,7 +84,40 @@ function MoneyField({ field, inputs, invalid, onChange, onOpenMap }) {
             onChange(field.key, sanitizeMoney(event.target.value))
           }
         />
-        <span>만원</span>
+        <span className={styles.unit}>만원</span>
+        {showStepper ? (
+          <span
+            className={styles.stepper}
+            role="group"
+            aria-label="월급 10만원 단위 조절"
+            data-tooltip="10만원씩 조절할 수 있어요"
+          >
+            <button
+              type="button"
+              className={styles.stepBtn}
+              aria-label="10만원 올리기"
+              title="10만원 올리기"
+              onClick={(event) => {
+                event.preventDefault();
+                onNudge?.(BUSAN_PAY_STEP);
+              }}
+            >
+              ▲
+            </button>
+            <button
+              type="button"
+              className={styles.stepBtn}
+              aria-label="10만원 내리기"
+              title="10만원 내리기"
+              onClick={(event) => {
+                event.preventDefault();
+                onNudge?.(-BUSAN_PAY_STEP);
+              }}
+            >
+              ▼
+            </button>
+          </span>
+        ) : null}
       </span>
 
       <FieldHint hint={field.hint} onOpenMap={onOpenMap} />
@@ -111,9 +154,11 @@ export default function ComparisonForm() {
   const {
     inputs,
     setField,
+    nudgeBusanPay,
     beginCompare,
     setResult,
     setCompareError,
+    clearResult,
     reset,
   } = useComparisonInputs();
   const { values, missing, complete } = useNumbers();
@@ -123,11 +168,20 @@ export default function ComparisonForm() {
   const [error, setError] = useState(null);
   const [mapOpen, setMapOpen] = useState(false);
 
+  // 다시 계산하기로 돌아올 때 결과만 정리 (입력은 이미 resetInputs로 비움)
+  useEffect(() => {
+    clearResult();
+  }, [clearResult]);
+
   const fieldProps = {
     inputs,
     tried,
     missing,
     onOpenMap: () => setMapOpen(true),
+    onNudge: (delta) => {
+      setError(null);
+      nudgeBusanPay(delta);
+    },
     onChange: (key, value) => {
       setError(null);
       setField(key, value);
