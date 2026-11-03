@@ -189,7 +189,7 @@ export default function BusanMap3D() {
   return (
     <div className="page">
       <div className={`${styles.layout} lift`}>
-        <section className="card">
+        <section className={`card ${styles.mapCard}`}>
           <div className={styles.toolbar}>
             <h2>어디로 가볼까?</h2>
           </div>
@@ -232,10 +232,10 @@ export default function BusanMap3D() {
           </div>
 
           {districts.loading && (
-            <p className="small muted" style={{ margin: '10px 0 0' }}>월세 중앙값 데이터를 불러오는 중…</p>
+            <p className={`small muted ${styles.criteria}`} style={{ paddingLeft: 0 }}>월세 중앙값 데이터를 불러오는 중…</p>
           )}
           {!districts.loading && districts.error && (
-            <div style={{ marginTop: 10 }}>
+            <div className={styles.criteria} style={{ paddingLeft: 0 }}>
               <p className="small bad" style={{ margin: 0 }} role="alert">{districts.error}</p>
               <button type="button" className="btn-ghost" style={{ marginTop: 6 }} onClick={() => setDistrictRetry((n) => n + 1)}>
                 ↻ 지도 데이터 다시 시도
@@ -243,14 +243,14 @@ export default function BusanMap3D() {
             </div>
           )}
           {!districts.loading && !districts.error && criteria.length > 0 && (
-            <ul className="small muted" style={{ margin: '10px 0 0', paddingLeft: 18, lineHeight: 1.55 }}>
+            <ul className={`small muted ${styles.criteria}`}>
               {criteria.map((line) => <li key={line}>{line}</li>)}
             </ul>
           )}
         </section>
 
-        <aside className="stack" style={{ gap: 20 }}>
-          <section className="card stack">
+        <aside className={styles.aside}>
+          <section className={`card stack ${styles.asidePanel}`}>
             <label className="stack" style={{ gap: 6 }}>
               <span className="small" style={{ fontWeight: 700 }}>동네 선택</span>
               <select
@@ -330,7 +330,7 @@ export default function BusanMap3D() {
             )}
           </section>
 
-          <section className={`card ${styles.top5}`}>
+          <section className={`card ${styles.top5} ${styles.asideRank}`}>
             <h2 style={{ fontSize: 18, marginBottom: 4 }}>다른 동네 둘러보기</h2>
             <p className="small muted" style={{ margin: '0 0 10px' }}>월세가 낮은 순 · 누르면 그 동네로 이동해요</p>
             {rankings.loading && <p className="small muted" style={{ margin: 0 }}>순위 데이터를 불러오는 중…</p>}
