@@ -14,3 +14,13 @@ __pycache__/
 # Postman 로컬 컬렉션. 서버 실행과 배포에 사용하지 않음.
 postman/
 .postman/
+
+# pytest 캐시
+.pytest_cache/
+
+# 리뷰/내보내기 산출물 (본선 앱과 무관)
+*.zip
+map-review-export/
+
+# 구버전 OpenAPI 명세 (현행은 busan_api_spec_v1.4.yaml)
+busan_api_spec_v1.3*.yaml
